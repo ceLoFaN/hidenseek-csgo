@@ -199,7 +199,7 @@ new const String:g_saGrenadeChatNames[][] = {
     "Decoy Grenade",
     "Incendiary Grenade"
 };
-new const g_iaGrenadeOffsets[] = {15, 17, 16, 14, 18, 17};
+new const g_iaGrenadeOffsets[] = {16, 18, 17, 15, 19, 18};
 
 //Add your protected ConVars here!
 new const String:g_saProtectedConVars[][] = {

@@ -708,11 +708,7 @@ public Action:Command_ToggleKnife(iClient, args)
 
 public SetViewmodelVisibility(iClient, bool:bVisible)
 {
-    if(bVisible)
-        SetEntProp(iClient, Prop_Send, "m_bDrawViewmodel", bVisible);
-    else
-        SetEntProp(iClient, Prop_Send, "m_bDrawViewmodel", bVisible);
-
+    SetEntProp(iClient, Prop_Send, "m_bDrawViewmodel", bVisible);
 }
 
 public MakeClientInvisible(iClient, Float:fDuration)

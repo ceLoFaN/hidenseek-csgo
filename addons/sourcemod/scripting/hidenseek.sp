@@ -175,10 +175,10 @@ new Float:g_fCTRespawnSleepDuration;
 new Float:g_fInvisibilityBreakDistance;
 
 //RespawnMode vars
-new Handle:g_hInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new Handle:g_hRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new Handle:g_hRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new g_iRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
+new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -571,14 +571,14 @@ public OnMapEnd()
             g_haFreezeTimer[iClient] = INVALID_HANDLE;
             g_iCountdownCount = 0;
         }
-        if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-            KillTimer(g_hRespawnFreezeCountdown[iClient]);
-            g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
-            g_iRespawnCountdownCount[iClient] = 0;
+        if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haRespawnFreezeCountdown[iClient]);
+            g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+            g_iaRespawnCountdownCount[iClient] = 0;
         }
-        if(g_hRespawn[iClient] != INVALID_HANDLE) {
-            KillTimer(g_hRespawn[iClient]);
-            g_hRespawn[iClient] = INVALID_HANDLE;
+        if(g_haRespawn[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haRespawn[iClient]);
+            g_haRespawn[iClient] = INVALID_HANDLE;
         }
     }
 }
@@ -666,7 +666,7 @@ public OnWeaponFire(Handle:hEvent, const String:name[], bool:dontBroadcast)
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             new iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
             new Handle:hPack;
-            if(g_hInvisible[iClient] != INVALID_HANDLE) 
+            if(g_haInvisible[iClient] != INVALID_HANDLE) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
             WritePackCell(hPack, iClient);
@@ -734,7 +734,7 @@ public Action:Command_Respawn(iClient, args)
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         if(!g_bRespawnMode)
             PrintToChat(iClient, "  \x04[HNS] You can't respawn if the server is not running Respawn Mode.");
-        else if(g_hRespawn[iClient] != INVALID_HANDLE)
+        else if(g_haRespawn[iClient] != INVALID_HANDLE)
             PrintToChat(iClient, "  \x04[HNS] You are already respawning.");
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
             PrintToChat(iClient, "  \x04[HNS] You must be on the ground in order to use this command.");
@@ -772,24 +772,24 @@ public MakeClientInvisible(iClient, Float:fDuration)
     SDKHook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     PrintToChat(iClient, "  \x04[HNS] You are now invisible for %.1f seconds.", fDuration);
 
-    if(g_hInvisible[iClient] != INVALID_HANDLE)
-        KillTimer(g_hInvisible[iClient]);
-    g_hInvisible[iClient] = CreateTimer(g_fInvisibilityDuration, MakeClientVisible, iClient, TIMER_FLAG_NO_MAPCHANGE);
+    if(g_haInvisible[iClient] != INVALID_HANDLE)
+        KillTimer(g_haInvisible[iClient]);
+    g_haInvisible[iClient] = CreateTimer(g_fInvisibilityDuration, MakeClientVisible, iClient, TIMER_FLAG_NO_MAPCHANGE);
     CreateTimer(0.5, CheckDistanceToEnemies, iClient, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }  
 
 public Action:MakeClientVisible(Handle:hTimer, any:iClient)
 {
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
-    g_hInvisible[iClient] = INVALID_HANDLE;
+    g_haInvisible[iClient] = INVALID_HANDLE;
     PrintToChat(iClient, "  \x04[HNS] You are now visible again.");
 }
 
 public BreakInvisibility(iClient, iReason)
 {
-    if(g_hInvisible[iClient] != INVALID_HANDLE) {
-        KillTimer(g_hInvisible[iClient]);
-        g_hInvisible[iClient] = INVALID_HANDLE;
+    if(g_haInvisible[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haInvisible[iClient]);
+        g_haInvisible[iClient] = INVALID_HANDLE;
         SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
         if(iReason == REASON_ENEMY_TOO_CLOSE)
             PrintToChat(iClient, "  \x04[HNS] You got too close to an enemy and your invisibility was broken.");
@@ -802,7 +802,7 @@ public BreakInvisibility(iClient, iReason)
 
 public Action:CheckDistanceToEnemies(Handle:hTimer, any:iClient)
 {
-    if(g_hInvisible[iClient] == INVALID_HANDLE)
+    if(g_haInvisible[iClient] == INVALID_HANDLE)
         return Plugin_Stop;
     new iClientTeam = GetClientTeam(iClient);
     for(new iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -930,10 +930,10 @@ public OnClientDisconnect(iClient)
         }
         g_baFrozen[iClient] = false;
     }
-    if(g_hInvisible[iClient] != INVALID_HANDLE) {
-        KillTimer(g_hInvisible[iClient]);
-        g_hInvisible[iClient] = INVALID_HANDLE;
-        g_iRespawnCountdownCount[iClient] = 0;
+    if(g_haInvisible[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haInvisible[iClient]);
+        g_haInvisible[iClient] = INVALID_HANDLE;
+        g_iaRespawnCountdownCount[iClient] = 0;
     }
     g_baToggleKnife[iClient] = true;
 }
@@ -971,20 +971,20 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
 
 public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
-    g_iRespawnCountdownCount[iClient]++;
-    if(g_iRespawnCountdownCount[iClient] < g_fCountdownTime) {
+    g_iaRespawnCountdownCount[iClient]++;
+    if(g_iaRespawnCountdownCount[iClient] < g_fCountdownTime) {
         if(IsClientInGame(iClient)) {
-            new iTimeDelta = iCountdownTimeFloor - g_iRespawnCountdownCount[iClient];
+            new iTimeDelta = iCountdownTimeFloor - g_iaRespawnCountdownCount[iClient];
             PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
         }
         return Plugin_Continue;
     }
     else {
-        g_iRespawnCountdownCount[iClient] = 0;
+        g_iaRespawnCountdownCount[iClient] = 0;
         if(IsClientInGame(iClient))
             PrintCenterText(iClient, "\n  You are ready to go.");
         //EmitSoundToAll(SOUND_GOGOGO);
-        g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+        g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
     }
 }
@@ -1031,11 +1031,11 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
                     PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
-                    if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-                        KillTimer(g_hRespawnFreezeCountdown[iClient]);
-                        g_iRespawnCountdownCount[iClient] = 0;
+                    if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+                        KillTimer(g_haRespawnFreezeCountdown[iClient]);
+                        g_iaRespawnCountdownCount[iClient] = 0;
                     }
-                    g_hRespawnFreezeCountdown[iClient] = CreateTimer(1.0, RespawnCountdown, iClient, TIMER_REPEAT);
+                    g_haRespawnFreezeCountdown[iClient] = CreateTimer(1.0, RespawnCountdown, iClient, TIMER_REPEAT);
                 }
             }
             else if(g_fCountdownTime > 0.0 && fDefreezeTime > 0.0 && (fDefreezeTime < g_fCountdownTime + 1.0)) {
@@ -1056,7 +1056,7 @@ public Action:RespawnPlayer(Handle:hTimer, any:iClient)
         if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
             CS_RespawnPlayer(iClient);
     }
-    g_hRespawn[iClient] = INVALID_HANDLE;
+    g_haRespawn[iClient] = INVALID_HANDLE;
 }
 
 public OnClientPutInServer(iClient)
@@ -1075,9 +1075,9 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     decl String:sChosenTeam[2];
     GetCmdArg(1, sChosenTeam, sizeof(sChosenTeam));
     new iChosenTeam = StringToInt(sChosenTeam);
-    if(iChosenTeam == CS_TEAM_SPECTATOR && g_hRespawn[iClient] != INVALID_HANDLE) {
-        KillTimer(g_hRespawn[iClient]);
-        g_hRespawn[iClient] = INVALID_HANDLE;
+    if(iChosenTeam == CS_TEAM_SPECTATOR && g_haRespawn[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haRespawn[iClient]);
+        g_haRespawn[iClient] = INVALID_HANDLE;
     }
 
     if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
@@ -1136,13 +1136,13 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
 }
 
 public RespawnPlayerLazy(iClient) {
-    if(g_bRespawnMode && g_hRespawn[iClient] == INVALID_HANDLE) {
+    if(g_bRespawnMode && g_haRespawn[iClient] == INVALID_HANDLE) {
         if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT) {
-            g_hRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
+            g_haRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
             PrintToChat(iClient, "  \x04[HNS] You will respawn in %.f second%s.", g_fBaseRespawnTime, (g_fBaseRespawnTime == 1) ? "" : "s");
-            if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-                KillTimer(g_hRespawnFreezeCountdown[iClient]);
-                g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+            if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+                KillTimer(g_haRespawnFreezeCountdown[iClient]);
+                g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
             }
         }
         else
@@ -1304,7 +1304,7 @@ public Action:OnPlayerRunCmd(iClient, &iButtons, &iImpulse, Float:faVelocity[3],
         return Plugin_Changed;
     }
     
-    if(g_hInvisible[iClient] != INVALID_HANDLE)
+    if(g_haInvisible[iClient] != INVALID_HANDLE)
         if(GetEntityMoveType(iClient) == MOVETYPE_LADDER)
             BreakInvisibility(iClient, REASON_LADDER);
 

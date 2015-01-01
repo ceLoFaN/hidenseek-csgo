@@ -368,6 +368,7 @@ public OnPluginStart()
     g_bEnabled = true;
     
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
+    RegConsoleCmd("respawn", Command_Respawn);
     AutoExecConfig(true, "hidenseek");
     
     ServerCommand("mp_backup_round_file \"\"");
@@ -721,6 +722,37 @@ public Action:Command_ToggleKnife(iClient, args)
         GetEntityClassname(iWeapon, sWeaponName, sizeof(sWeaponName));
         if(IsWeaponKnife(sWeaponName))
             SetViewmodelVisibility(iClient, g_baToggleKnife[iClient]);
+    }
+    return Plugin_Handled;
+}
+
+public Action:Command_Respawn(iClient, args)
+{
+    if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
+        if(g_hRespawn[iClient] != INVALID_HANDLE)
+            PrintToChat(iClient, "  \x04[HNS] You are already respawning.");
+        else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
+            PrintToChat(iClient, "  \x04[HNS] You must be on the ground in order to use this command.");
+        else {
+            new iClientTeam = GetClientTeam(iClient);
+            for(new iTarget = 1; iTarget < MaxClients; iTarget ++) {
+                if(IsClientInGame(iTarget)) {
+                    new iTargetTeam = GetClientTeam(iTarget);
+                    if(iClientTeam != iTargetTeam && iTargetTeam != CS_TEAM_SPECTATOR) {
+                        new Float:faTargetCoord[3];
+                        new Float:faClientCoord[3];
+                        GetClientAbsOrigin(iTarget, faTargetCoord);
+                        GetClientAbsOrigin(iClient, faClientCoord);
+                        if(GetVectorDistance(faTargetCoord, faClientCoord) <= 500) {
+                            PrintToChat(iClient, "  \x04[HNS] You are too close to an enemy to use this command.");
+                            return Plugin_Handled;
+                        }
+                    }
+                }
+            }
+            Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
+            RespawnPlayerLazy(iClient);
+        }
     }
     return Plugin_Handled;
 }

@@ -1032,6 +1032,7 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
             }
             else if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
                 g_iaInitialTeamTrack[iClient] = iChosenTeam;
+                RespawnPlayerLazy(iClient);
                 return Plugin_Continue;
             }
             else {
@@ -1057,19 +1058,34 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     }
     else if(iTeam == CS_TEAM_SPECTATOR) {
         if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
-            g_iaInitialTeamTrack[iClient] = iChosenTeam;
+            if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND) {
+                g_iaInitialTeamTrack[iClient] = iChosenTeam;
+                RespawnPlayerLazy(iClient);
+            }
             return Plugin_Continue;
         }
         else if(g_iaInitialTeamTrack[iClient]) {
             PrintToChat(iClient, "  \x04[HNS] You have been assigned to team %s", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "T" : "CT");
             CS_SwitchTeam(iClient, g_iaInitialTeamTrack[iClient]);
+            RespawnPlayerLazy(iClient);
             return Plugin_Stop;
         }
-        else
-            return Plugin_Continue;
+        if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND)
+            RespawnPlayerLazy(iClient);
+        return Plugin_Continue;
     }
     SilentUnfreeze(iClient);
     return Plugin_Continue;
+}
+
+public RespawnPlayerLazy(iClient) {
+    if(g_bRespawnMode) {
+        CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient, TIMER_FLAG_NO_MAPCHANGE);
+        if(g_hRespawnCountdownMessage[iClient] != INVALID_HANDLE) {
+            KillTimer(g_hRespawnCountdownMessage[iClient]);
+            g_hRespawnCountdownMessage[iClient] = INVALID_HANDLE;
+        }
+    }
 }
 
 public Action:Command_Kill(iClient, const String:sCommand[], iArgCount)
@@ -1181,13 +1197,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         }
     }
 
-    if(g_bRespawnMode) {
-        CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iVictim, TIMER_FLAG_NO_MAPCHANGE);
-        if(g_hRespawnCountdownMessage[iVictim] != INVALID_HANDLE) {
-            KillTimer(g_hRespawnCountdownMessage[iVictim]);
-            g_hRespawnCountdownMessage[iVictim] = INVALID_HANDLE;
-        }
-    }
+    RespawnPlayerLazy(iVictim);
     return Plugin_Continue;
 }
 

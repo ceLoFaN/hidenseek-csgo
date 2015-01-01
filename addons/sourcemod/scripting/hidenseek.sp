@@ -356,6 +356,7 @@ public OnPluginStart()
     HookEvent("round_end", OnRoundEnd);
     HookEvent("item_pickup", OnItemPickUp);
     HookEvent("player_death", OnPlayerDeath);
+    HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     
@@ -1185,6 +1186,20 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         if(g_hRespawnCountdownMessage[iVictim] != INVALID_HANDLE) {
             KillTimer(g_hRespawnCountdownMessage[iVictim]);
             g_hRespawnCountdownMessage[iVictim] = INVALID_HANDLE;
+        }
+    }
+    return Plugin_Continue;
+}
+
+public Action:OnPlayerDeath_Pre(Handle:hEvent, const String:sName[], bool:bDontBroadcast) {
+    if(!g_bEnabled)
+        return Plugin_Continue;
+    new iVictim = GetClientOfUserId(GetEventInt(hEvent, "userid"));
+    if(iVictim > 0 && iVictim <= MaxClients) {
+        if(g_bRespawnMode) {
+            for(new i = 0; i < 2; i++)
+                RemoveWeaponBySlot(iVictim, i);
+            RemoveNades(iVictim);
         }
     }
     return Plugin_Continue;

@@ -729,7 +729,9 @@ public Action:Command_ToggleKnife(iClient, args)
 public Action:Command_Respawn(iClient, args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
-        if(g_hRespawn[iClient] != INVALID_HANDLE)
+        if(!g_bRespawnMode)
+            PrintToChat(iClient, "  \x04[HNS] You can't respawn if the server is not running Respawn Mode.");
+        else if(g_hRespawn[iClient] != INVALID_HANDLE)
             PrintToChat(iClient, "  \x04[HNS] You are already respawning.");
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
             PrintToChat(iClient, "  \x04[HNS] You must be on the ground in order to use this command.");

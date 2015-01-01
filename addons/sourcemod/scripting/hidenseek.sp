@@ -1053,9 +1053,8 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
 public Action:RespawnPlayer(Handle:hTimer, any:iClient)
 {
     if(iClient > 0 && iClient < MaxClients && IsClientInGame(iClient)) {
-        if(!IsPlayerAlive(iClient))
-            if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
-                CS_RespawnPlayer(iClient);
+        if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
+            CS_RespawnPlayer(iClient);
     }
     g_hRespawn[iClient] = INVALID_HANDLE;
 }

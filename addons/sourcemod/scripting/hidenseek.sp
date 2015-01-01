@@ -179,6 +179,7 @@ new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new Handle:g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
+new bool:g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -962,6 +963,7 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
         new iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
+        g_baAvailableToSwap[iClient] = true;
     }
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
@@ -1259,8 +1261,40 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         }
     }
 
-    RespawnPlayerLazy(iVictim);
+    if(g_baAvailableToSwap[iVictim]) {
+        TrySwapPlayers(iVictim);
+        RespawnPlayerLazy(iVictim);
+    }
     return Plugin_Continue;
+}
+
+public TrySwapPlayers(iClient) 
+{
+    new iClientTeam = GetClientTeam(iClient);
+    for(new iTarget = 1; iTarget < MaxClients; iTarget++) {
+        if(IsClientInGame(iTarget))
+            if(!IsPlayerAlive(iTarget)) {
+                new iTargetTeam = GetClientTeam(iTarget);
+                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_CT) || (iClient == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
+                    if(g_baAvailableToSwap[iTarget]) {
+                        CS_SwitchTeam(iClient, iTargetTeam);
+                        g_iaInitialTeamTrack[iClient] = iTargetTeam;
+
+                        CS_SwitchTeam(iTarget, iClientTeam);
+                        g_iaInitialTeamTrack[iTarget] = iClientTeam;
+
+                        g_baAvailableToSwap[iClient] = false;
+                        g_baAvailableToSwap[iTarget] = false;
+
+                        new String:sNickname[MAX_NAME_LENGTH];
+                        GetClientName(iTarget, sNickname, sizeof(sNickname));
+                        PrintToChat(iClient, "  \x04[HNS] You have switched teams with %s.", sNickname);
+
+                        GetClientName(iClient, sNickname, sizeof(sNickname));
+                        PrintToChat(iTarget, "  \x04[HNS] You have switched teams with %s.", sNickname);
+                    }
+            }
+    }
 }
 
 public Action:OnPlayerDeath_Pre(Handle:hEvent, const String:sName[], bool:bDontBroadcast) {
@@ -1463,14 +1497,20 @@ stock SwapTeams()
     for(new iClient = 1; iClient < MaxClients; iClient++) {
         if(IsClientInGame(iClient)) {
             new team = GetClientTeam(iClient);
-            if(team == CS_TEAM_T)
+            if(team == CS_TEAM_T) {
                 CS_SwitchTeam(iClient, CS_TEAM_CT);
-            else if(team == CS_TEAM_CT)
-                CS_SwitchTeam(iClient, CS_TEAM_T);
-            if(g_iaInitialTeamTrack[iClient] == CS_TEAM_T)
                 g_iaInitialTeamTrack[iClient] = CS_TEAM_CT;
-            else if(g_iaInitialTeamTrack[iClient] == CS_TEAM_CT)
+            }
+            else if(team == CS_TEAM_CT) {
+                CS_SwitchTeam(iClient, CS_TEAM_T);
                 g_iaInitialTeamTrack[iClient] = CS_TEAM_T;
+            }
+            else {
+                if(g_iaInitialTeamTrack[iClient] == CS_TEAM_T)
+                    g_iaInitialTeamTrack[iClient] = CS_TEAM_CT;
+                else if(g_iaInitialTeamTrack[iClient] == CS_TEAM_CT)
+                    g_iaInitialTeamTrack[iClient] = CS_TEAM_T;
+            }
         }
     }
 }

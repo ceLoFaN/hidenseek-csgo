@@ -622,7 +622,7 @@ public Action:FirstCountdownMessage(Handle:hTimer, any:iClient)
 {
     new iCountdownTimeFloor = RoundToFloor(g_fCountdownTime);
     if(IsClientInGame(iClient))
-        PrintHintText(iClient, "\n  The round will start in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+        PrintCenterText(iClient, "\n  The round will start in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
 }
 
 public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
@@ -633,7 +633,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient)) {
                 new iTimeDelta = iCountdownTimeFloor - g_iCountdownCount;
-                PrintHintText(iClient, "\n  The round will start in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+                PrintCenterText(iClient, "\n  The round will start in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
             }
         }
         return Plugin_Continue;
@@ -643,7 +643,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         g_iInitialTerroristsCount = GetTeamClientCount(CS_TEAM_T);
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient))
-                PrintHintText(iClient, "\n  The round has started.");
+                PrintCenterText(iClient, "\n  The round has started.");
         }
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hShowCountdownMessage = INVALID_HANDLE;
@@ -972,14 +972,14 @@ public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
     if(g_iRespawnCountdownCount[iClient] < g_fCountdownTime) {
         if(IsClientInGame(iClient)) {
             new iTimeDelta = iCountdownTimeFloor - g_iRespawnCountdownCount[iClient];
-            PrintHintText(iClient, "\n  You will wake up in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+            PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
         }
         return Plugin_Continue;
     }
     else {
         g_iRespawnCountdownCount[iClient] = 0;
         if(IsClientInGame(iClient))
-            PrintHintText(iClient, "\n  You are ready to go.");
+            PrintCenterText(iClient, "\n  You are ready to go.");
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
@@ -1027,7 +1027,7 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                 if(g_fCTRespawnSleepDuration) {
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
-                    PrintHintText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+                    PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
                     if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
                         KillTimer(g_hRespawnFreezeCountdown[iClient]);
                         g_iRespawnCountdownCount[iClient] = 0;

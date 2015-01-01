@@ -553,7 +553,7 @@ public Action:RespawnDeadPlayers(Handle:hTimer)
     if(g_bRespawnMode)
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient))
-                if(GetClientTeam(iClient) == 2 || GetClientTeam(iClient) == 3)
+                if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
                     if(!IsPlayerAlive(iClient))
                         RespawnPlayerLazy(iClient);
         }
@@ -1068,13 +1068,19 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
 {
     if(!g_bEnabled)
         return Plugin_Continue;
-    if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
-        return Plugin_Continue;
+
     new iTeam = GetClientTeam(iClient);
     decl String:sChosenTeam[2];
     GetCmdArg(1, sChosenTeam, sizeof(sChosenTeam));
     new iChosenTeam = StringToInt(sChosenTeam);
-    
+    if(iChosenTeam == CS_TEAM_SPECTATOR && g_hRespawn[iClient] != INVALID_HANDLE) {
+        KillTimer(g_hRespawn[iClient]);
+        g_hRespawn[iClient] = INVALID_HANDLE;
+    }
+
+    if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
+        return Plugin_Continue;
+
     new iLimitTeams = GetConVarInt(FindConVar("mp_limitteams"));
     new iDelta = GetTeamPlayerCount(CS_TEAM_T) - GetTeamPlayerCount(CS_TEAM_CT);
     if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
@@ -1112,18 +1118,15 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
         if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
             if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND) {
                 g_iaInitialTeamTrack[iClient] = iChosenTeam;
-                RespawnPlayerLazy(iClient);
             }
             return Plugin_Continue;
         }
         else if(g_iaInitialTeamTrack[iClient]) {
             PrintToChat(iClient, "  \x04[HNS] You have been assigned to team %s", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "T" : "CT");
             CS_SwitchTeam(iClient, g_iaInitialTeamTrack[iClient]);
-            RespawnPlayerLazy(iClient);
             return Plugin_Stop;
         }
         if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND)
-            RespawnPlayerLazy(iClient);
         return Plugin_Continue;
     }
     SilentUnfreeze(iClient);
@@ -1132,11 +1135,16 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
 
 public RespawnPlayerLazy(iClient) {
     if(g_bRespawnMode && g_hRespawn[iClient] == INVALID_HANDLE) {
-        g_hRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
-        if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-            KillTimer(g_hRespawnFreezeCountdown[iClient]);
-            g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+        if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT) {
+            g_hRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
+            PrintToChat(iClient, "  \x04[HNS] You will respawn in %.f second%s.", g_fBaseRespawnTime, (g_fBaseRespawnTime == 1) ? "" : "s");
+            if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+                KillTimer(g_hRespawnFreezeCountdown[iClient]);
+                g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+            }
         }
+        else
+            PrintToChat(iClient, "  \x04[HNS] You must choose a valid team in order to respawn.");
     }
 }
 

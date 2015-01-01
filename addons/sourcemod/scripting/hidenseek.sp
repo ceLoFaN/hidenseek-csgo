@@ -395,6 +395,7 @@ public OnConfigsExecuted()
     g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
     g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak);
     g_bRespawnMode = GetConVarBool(g_hRespawnMode);
+    SetConVarInt(FindConVar("mp_randomspawn"), g_bRespawnMode);
     g_fBaseRespawnTime = GetConVarFloat(g_hBaseRespawnTime);
     g_fInvisibilityDuration = GetConVarFloat(g_hInvisibilityDuration);
     g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
@@ -490,8 +491,10 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
         g_iSuicidePointsPenalty = StringToInt(sNewValue); else
     if(StrEqual("hns_molotov_friendly_fire", sConVarName))
         g_bMolotovFriendlyFire = GetConVarBool(hConVar); else
-    if(StrEqual("hns_respawn_mode", sConVarName))
-        g_bRespawnMode = GetConVarBool(hConVar); else
+    if(StrEqual("hns_respawn_mode", sConVarName)) {
+        g_bRespawnMode = GetConVarBool(hConVar);
+        SetConVarInt(FindConVar("mp_randomspawn"), g_bRespawnMode);
+    } else
     if(StrEqual("hns_base_respawn_time", sConVarName))
         g_fBaseRespawnTime = GetConVarFloat(hConVar); else
     if(StrEqual("hns_respawn_invisibility_duration", sConVarName))

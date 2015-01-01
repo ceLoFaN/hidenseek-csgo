@@ -963,7 +963,6 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
         new iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
-        g_baAvailableToSwap[iClient] = true;
     }
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
@@ -1255,6 +1254,8 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
 
     if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0 && !(iAssister > 0 && iAssister <= MaxClients)) {
         SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
+        if(GetClientTeam(iVictim) == CS_TEAM_T)
+            g_baAvailableToSwap[iVictim] = true;
         if(g_iSuicidePointsPenalty) {
             CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
             PrintToChat(iVictim, "  \x04[HNS] You died by fall without an enemy assist. You lose %d points.", g_iSuicidePointsPenalty);

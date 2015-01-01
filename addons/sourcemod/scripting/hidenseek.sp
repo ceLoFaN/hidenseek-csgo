@@ -176,7 +176,8 @@ new Float:g_fInvisibilityBreakDistance;
 
 //RespawnMode vars
 new Handle:g_hInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new Handle:g_hRespawnCountdownMessage[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_hRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_hRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new g_iRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 
 //Roundstart vars    
@@ -543,6 +544,19 @@ public OnMapStart()
         CreateHostageRescue();    // Make sure T wins when the time runs out
         RemoveBombsites();
     }
+    CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action:RespawnDeadPlayers(Handle:hTimer) 
+{
+    if(g_bRespawnMode)
+        for(new iClient = 1; iClient < MaxClients; iClient++) {
+            if(IsClientInGame(iClient))
+                if(GetClientTeam(iClient) == 2 || GetClientTeam(iClient) == 3)
+                    if(!IsPlayerAlive(iClient))
+                        RespawnPlayerLazy(iClient);
+        }
+    return Plugin_Continue;
 }
 
 public OnMapEnd() 
@@ -553,10 +567,14 @@ public OnMapEnd()
             g_haFreezeTimer[iClient] = INVALID_HANDLE;
             g_iCountdownCount = 0;
         }
-        if(g_hRespawnCountdownMessage[iClient] != INVALID_HANDLE) {
-            KillTimer(g_hRespawnCountdownMessage[iClient]);
-            g_hRespawnCountdownMessage[iClient] = INVALID_HANDLE;
+        if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+            KillTimer(g_hRespawnFreezeCountdown[iClient]);
+            g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
             g_iRespawnCountdownCount[iClient] = 0;
+        }
+        if(g_hRespawn[iClient] != INVALID_HANDLE) {
+            KillTimer(g_hRespawn[iClient]);
+            g_hRespawn[iClient] = INVALID_HANDLE;
         }
     }
 }
@@ -929,7 +947,7 @@ public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
         if(IsClientInGame(iClient))
             PrintHintText(iClient, "\n  You are ready to go.");
         //EmitSoundToAll(SOUND_GOGOGO);
-        g_hRespawnCountdownMessage[iClient] = INVALID_HANDLE;
+        g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
     }
 }
@@ -976,11 +994,11 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
                     PrintHintText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
-                    if(g_hRespawnCountdownMessage[iClient] != INVALID_HANDLE) {
-                        KillTimer(g_hRespawnCountdownMessage[iClient]);
+                    if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+                        KillTimer(g_hRespawnFreezeCountdown[iClient]);
                         g_iRespawnCountdownCount[iClient] = 0;
                     }
-                    g_hRespawnCountdownMessage[iClient] = CreateTimer(1.0, RespawnCountdown, iClient, TIMER_REPEAT);
+                    g_hRespawnFreezeCountdown[iClient] = CreateTimer(1.0, RespawnCountdown, iClient, TIMER_REPEAT);
                 }
             }
             else if(g_fCountdownTime > 0.0 && fDefreezeTime > 0.0 && (fDefreezeTime < g_fCountdownTime + 1.0)) {
@@ -1002,6 +1020,7 @@ public Action:RespawnPlayer(Handle:hTimer, any:iClient)
             if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
                 CS_RespawnPlayer(iClient);
     }
+    g_hRespawn[iClient] = INVALID_HANDLE;
 }
 
 public OnClientPutInServer(iClient)
@@ -1032,7 +1051,6 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
             }
             else if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
                 g_iaInitialTeamTrack[iClient] = iChosenTeam;
-                RespawnPlayerLazy(iClient);
                 return Plugin_Continue;
             }
             else {
@@ -1079,11 +1097,11 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
 }
 
 public RespawnPlayerLazy(iClient) {
-    if(g_bRespawnMode) {
-        CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient, TIMER_FLAG_NO_MAPCHANGE);
-        if(g_hRespawnCountdownMessage[iClient] != INVALID_HANDLE) {
-            KillTimer(g_hRespawnCountdownMessage[iClient]);
-            g_hRespawnCountdownMessage[iClient] = INVALID_HANDLE;
+    if(g_bRespawnMode && g_hRespawn[iClient] == INVALID_HANDLE) {
+        g_hRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
+        if(g_hRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+            KillTimer(g_hRespawnFreezeCountdown[iClient]);
+            g_hRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         }
     }
 }

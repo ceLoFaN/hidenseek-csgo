@@ -180,6 +180,7 @@ new Handle:g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 new bool:g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
+new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -966,6 +967,7 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     }
 
     g_baAvailableToSwap[iClient] = false;
+    g_baDiedBecauseRespawning[iClient] = false;
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
         
@@ -1138,14 +1140,19 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     return Plugin_Continue;
 }
 
-public RespawnPlayerLazy(iClient) {
+RespawnPlayerLazy(iClient, bool:bInstantaneous = false) {
     if(g_bRespawnMode && g_haRespawn[iClient] == INVALID_HANDLE) {
         if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT) {
-            g_haRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
-            PrintToChat(iClient, "  \x04[HNS] You will respawn in %.f second%s.", g_fBaseRespawnTime, (g_fBaseRespawnTime == 1) ? "" : "s");
             if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
                 KillTimer(g_haRespawnFreezeCountdown[iClient]);
                 g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+            }
+            if(bInstantaneous) {
+                g_haRespawn[iClient] = CreateTimer(0.0, RespawnPlayer, iClient);
+            }
+            else {
+                g_haRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
+                PrintToChat(iClient, "  \x04[HNS] You will respawn in %.f second%s.", g_fBaseRespawnTime, (g_fBaseRespawnTime == 1) ? "" : "s");
             }
         }
         else
@@ -1246,7 +1253,31 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                     CS_SetClientContributionScore(iAttacker, CS_GetClientContributionScore(iAttacker) + g_iBonusPointsMultiplier - 1); 
                     decl String:sNickname[MAX_NAME_LENGTH];                    
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
-                    PrintToChat(iAttacker, "  \x04[HNS] You got %d points for killing %s.", g_iBonusPointsMultiplier, sNickname);
+                    if(!g_bRespawnMode)
+                        PrintToChat(iAttacker, "  \x04[HNS] You got %d point%s for killing %s.", 
+                            g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
+                    else {
+                        g_baAvailableToSwap[iVictim] = false;
+                        g_baAvailableToSwap[iAttacker] = false;
+
+                        g_baDiedBecauseRespawning[iAttacker] = true;
+
+                        DealDamage(iAttacker, GetEntProp(iAttacker, Prop_Send, "m_iHealth"), 69);
+                        SetClientFrags(iVictim, GetClientFrags(iAttacker) + 1);
+
+                        CS_SwitchTeam(iAttacker, CS_TEAM_T);
+                        g_iaInitialTeamTrack[iAttacker] = CS_TEAM_T;
+                        CS_SwitchTeam(iVictim, CS_TEAM_CT);
+                        g_iaInitialTeamTrack[iVictim] = CS_TEAM_CT;
+
+                        RespawnPlayerLazy(iAttacker, true);
+
+                        PrintToChat(iAttacker, "  \x04[HNS] You killed %s for %d point%s and you have swapped teams with him.", 
+                            sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
+
+                        GetClientName(iAttacker, sNickname, sizeof(sNickname));
+                        PrintToChat(iVictim, "  \x04[HNS] You were killed by %s and have swapped teams with him.", sNickname);
+                    }
                 }
             }
         }
@@ -1255,7 +1286,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         SilentUnfreeze(iVictim);
 
     if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0) {
-        if(!(iAssister > 0 && iAssister <= MaxClients)) {
+        if(!(iAssister > 0 && iAssister <= MaxClients) && !g_baDiedBecauseRespawning[iVictim]) {
             SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
             if(GetClientTeam(iVictim) == CS_TEAM_T)
                 g_baAvailableToSwap[iVictim] = true;
@@ -1264,14 +1295,16 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                 PrintToChat(iVictim, "  \x04[HNS] You died by fall without an enemy assist. You lose %d points.", g_iSuicidePointsPenalty);
             }
         }
-        if(GetClientTeam(iVictim) == CS_TEAM_CT)
+        if(GetClientTeam(iVictim) == CS_TEAM_CT && !g_baDiedBecauseRespawning[iVictim])
             g_baAvailableToSwap[iVictim] = true;
         
     }
 
-    if(g_baAvailableToSwap[iVictim]) {
-        TrySwapPlayers(iVictim);
-        RespawnPlayerLazy(iVictim);
+    if(g_bRespawnMode) {
+        if(g_baAvailableToSwap[iVictim]) {
+            TrySwapPlayers(iVictim);
+            RespawnPlayerLazy(iVictim);
+        }
     }
     return Plugin_Continue;
 }
@@ -1731,4 +1764,33 @@ stock GetTeamPlayerCount(iTeam)
             if(GetClientTeam(iClient) == iTeam)
                 iCount++;
     return iCount;
+}
+
+DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeapon[] = "")
+{
+    // thanks to pimpinjuice
+    if(iVictim>0 && IsValidEdict(iVictim) && IsClientInGame(iVictim) && IsPlayerAlive(iVictim) && iDamage > 0)
+    {
+        new String:sDmg[16];
+        IntToString(iDamage, sDmg, 16);
+        new String:sDmgType[32];
+        IntToString(iDmgType, sDmgType, 32);
+        new iPointHurt = CreateEntityByName("point_hurt");
+        if(iPointHurt)
+        {
+            DispatchKeyValue(iVictim, "targetname", "war3_hurtme");
+            DispatchKeyValue(iPointHurt, "DamageTarget", "war3_hurtme");
+            DispatchKeyValue(iPointHurt, "Damage", sDmg);
+            DispatchKeyValue(iPointHurt, "DamageType", sDmgType);
+            if(!StrEqual(sWeapon, ""))
+            {
+                DispatchKeyValue(iPointHurt, "classname", sWeapon);
+            }
+            DispatchSpawn(iPointHurt);
+            AcceptEntityInput(iPointHurt, "Hurt", (iAttacker > 0) ? iAttacker : -1);
+            DispatchKeyValue(iPointHurt, "classname", "point_hurt");
+            DispatchKeyValue(iVictim, "targetname", "war3_donthurtme");
+            RemoveEdict(iPointHurt);
+        }
+    }
 }

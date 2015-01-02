@@ -957,13 +957,15 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(!g_bEnabled)
         return Plugin_Continue;
     new iId = GetEventInt(hEvent, "userid");
+    new iClient = GetClientOfUserId(iId);
 
     if(g_bRespawnMode) {
-        new iClient = GetClientOfUserId(iId);
         new iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
+
+    g_baAvailableToSwap[iClient] = false;
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
         
@@ -1252,14 +1254,19 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(g_baFrozen[iVictim])
         SilentUnfreeze(iVictim);
 
-    if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0 && !(iAssister > 0 && iAssister <= MaxClients)) {
-        SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
-        if(GetClientTeam(iVictim) == CS_TEAM_T)
-            g_baAvailableToSwap[iVictim] = true;
-        if(g_iSuicidePointsPenalty) {
-            CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
-            PrintToChat(iVictim, "  \x04[HNS] You died by fall without an enemy assist. You lose %d points.", g_iSuicidePointsPenalty);
+    if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0) {
+        if(!(iAssister > 0 && iAssister <= MaxClients)) {
+            SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
+            if(GetClientTeam(iVictim) == CS_TEAM_T)
+                g_baAvailableToSwap[iVictim] = true;
+            if(g_iSuicidePointsPenalty) {
+                CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
+                PrintToChat(iVictim, "  \x04[HNS] You died by fall without an enemy assist. You lose %d points.", g_iSuicidePointsPenalty);
+            }
         }
+        if(GetClientTeam(iVictim) == CS_TEAM_CT)
+            g_baAvailableToSwap[iVictim] = true;
+        
     }
 
     if(g_baAvailableToSwap[iVictim]) {

@@ -269,6 +269,9 @@ new Handle:g_haProtectedConvar[sizeof(g_saProtectedConVars)] = {INVALID_HANDLE, 
 
 public OnPluginStart()
 {
+	//Load Translations
+	LoadTranslations("hidenseek.phrases");
+
     //ConVars here
     CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
     g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
@@ -718,7 +721,7 @@ public Action:Command_ToggleKnife(iClient, args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         g_baToggleKnife[iClient] = !g_baToggleKnife[iClient];
-        PrintToChat(iClient, "  \x04[HNS] Your knife is now %s.", g_baToggleKnife[iClient] ? "visible" : "invisible");
+        PrintToChat(iClient, "  \x04[HNS] %t", g_baToggleKnife[iClient] ? "Toggle Knife On" : "Toggle Knife Off");
         
         new iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
         if(!IsValidEntity(iWeapon))
@@ -735,11 +738,11 @@ public Action:Command_Respawn(iClient, args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         if(!g_bRespawnMode)
-            PrintToChat(iClient, "  \x04[HNS] You can't respawn if the server is not running Respawn Mode.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Off");
         else if(g_haRespawn[iClient] != INVALID_HANDLE)
-            PrintToChat(iClient, "  \x04[HNS] You are already respawning.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Alive");
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
-            PrintToChat(iClient, "  \x04[HNS] You must be on the ground in order to use this command.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted In Flight");
         else {
             new iClientTeam = GetClientTeam(iClient);
             for(new iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -751,7 +754,7 @@ public Action:Command_Respawn(iClient, args)
                         GetClientAbsOrigin(iTarget, faTargetCoord);
                         GetClientAbsOrigin(iClient, faClientCoord);
                         if(GetVectorDistance(faTargetCoord, faClientCoord) <= 500) {
-                            PrintToChat(iClient, "  \x04[HNS] You are too close to an enemy to use this command.");
+                            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Enemy Near");
                             return Plugin_Handled;
                         }
                     }
@@ -772,7 +775,7 @@ public SetViewmodelVisibility(iClient, bool:bVisible)
 public MakeClientInvisible(iClient, Float:fDuration)
 {
     SDKHook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
-    PrintToChat(iClient, "  \x04[HNS] You are now invisible for %.1f seconds.", fDuration);
+    PrintToChat(iClient, "  \x04[HNS] %t", "Invisible On", fDuration);
 
     if(g_haInvisible[iClient] != INVALID_HANDLE)
         KillTimer(g_haInvisible[iClient]);
@@ -784,7 +787,7 @@ public Action:MakeClientVisible(Handle:hTimer, any:iClient)
 {
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     g_haInvisible[iClient] = INVALID_HANDLE;
-    PrintToChat(iClient, "  \x04[HNS] You are now visible again.");
+    PrintToChat(iClient, "  \x04[HNS] %t", "Invisible Off");
 }
 
 public BreakInvisibility(iClient, iReason)
@@ -794,11 +797,11 @@ public BreakInvisibility(iClient, iReason)
         g_haInvisible[iClient] = INVALID_HANDLE;
         SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
         if(iReason == REASON_ENEMY_TOO_CLOSE)
-            PrintToChat(iClient, "  \x04[HNS] You got too close to an enemy and your invisibility was broken.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Enemy Near");
         else if(iReason == REASON_LADDER)
-            PrintToChat(iClient, "  \x04[HNS] You are no longer invisibile because you climbed a ladder.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Climb");
         else if(iReason == REASON_GRENADE)
-            PrintToChat(iClient, "  \x04[HNS] You are no longer invisibile because you threw a grenade.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Threw Grenade");
     }
 }
 
@@ -1093,7 +1096,7 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
         if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND) {
             if(IsPlayerAlive(iClient)) {
-                PrintToChat(iClient, "  \x04[HNS] You are not allowed to change teams while you're alive.");
+                PrintToChat(iClient, "  \x04[HNS] %t", "Team Change Deny Alive");
                 return Plugin_Stop;
             }
             else if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
@@ -1101,13 +1104,13 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
                 return Plugin_Continue;
             }
             else {
-                PrintToChat(iClient, "  \x04[HNS] You are not allowed to change teams while they're balanced.");
+                PrintToChat(iClient, "  \x04[HNS] %t", "Team Change Deny Balanced");
                 return Plugin_Stop;
             }
         }
         else if(iChosenTeam == JOINTEAM_SPEC) {
             if(IsPlayerAlive(iClient)) {
-                PrintToConsole(iClient, "  \x04[HNS] You are not allowed to go spectating while you're alive.");
+                PrintToConsole(iClient, "  \x04[HNS] %T", "Spectate Deny Alive", iClient);
                 return Plugin_Stop;
             }
             else {
@@ -1117,7 +1120,7 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
             }
         }
         else {
-            PrintToConsole(iClient, "  \x04[HNS] You are trying to join an invalid team.");
+            PrintToConsole(iClient, "  \x04[HNS] %T", "Invalid Team Console", iClient);
             return Plugin_Stop;
         }
     }
@@ -1129,7 +1132,7 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
             return Plugin_Continue;
         }
         else if(g_iaInitialTeamTrack[iClient]) {
-            PrintToChat(iClient, "  \x04[HNS] You have been assigned to team %s", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "T" : "CT");
+            PrintToChat(iClient, "  \x04[HNS] %t", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "Assigned To Team T" : "Assigned To Team CT");
             CS_SwitchTeam(iClient, g_iaInitialTeamTrack[iClient]);
             return Plugin_Stop;
         }
@@ -1152,11 +1155,11 @@ RespawnPlayerLazy(iClient, bool:bInstantaneous = false) {
             }
             else {
                 g_haRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
-                PrintToChat(iClient, "  \x04[HNS] You will respawn in %.f second%s.", g_fBaseRespawnTime, (g_fBaseRespawnTime == 1) ? "" : "s");
+                PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Countdown", g_fBaseRespawnTime);
             }
         }
         else
-            PrintToChat(iClient, "  \x04[HNS] You must choose a valid team in order to respawn.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Invalid Team");
     }
 }
 
@@ -1166,7 +1169,7 @@ public Action:Command_Kill(iClient, const String:sCommand[], iArgCount)
         return Plugin_Continue;
     if (!g_bBlockConsoleKill || iClient == 0 || iClient > MaxClients)
         return Plugin_Continue;
-    PrintToConsole(iClient, "  \x04[HNS] You are not allowed to use the kill command.");
+    PrintToConsole(iClient, "  \x04[HNS] %T", "Kill Deny", iClient);
     return Plugin_Stop;
 }
 
@@ -1254,8 +1257,8 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                     decl String:sNickname[MAX_NAME_LENGTH];                    
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
                     if(!g_bRespawnMode)
-                        PrintToChat(iAttacker, "  \x04[HNS] You got %d point%s for killing %s.", 
-                            g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
+                        PrintToChat(iAttacker, "  \x04[HNS] %t", 
+							"Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
                     else {
                         g_baAvailableToSwap[iVictim] = false;
                         g_baAvailableToSwap[iAttacker] = false;
@@ -1272,11 +1275,11 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
 
                         RespawnPlayerLazy(iAttacker, true);
 
-                        PrintToChat(iAttacker, "  \x04[HNS] You killed %s for %d point%s and you have swapped teams with him.", 
-                            sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
+                        PrintToChat(iAttacker, "  \x04[HNS] %t", 
+                            "Killing Notify Attacker", sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
 
                         GetClientName(iAttacker, sNickname, sizeof(sNickname));
-                        PrintToChat(iVictim, "  \x04[HNS] You were killed by %s and have swapped teams with him.", sNickname);
+                        PrintToChat(iVictim, "  \x04[HNS] %t", "Killing Notify Victim", sNickname);
                     }
                 }
             }
@@ -1292,7 +1295,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                 g_baAvailableToSwap[iVictim] = true;
             if(g_iSuicidePointsPenalty) {
                 CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
-                PrintToChat(iVictim, "  \x04[HNS] You died by fall without an enemy assist. You lose %d points.", g_iSuicidePointsPenalty);
+                PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
             }
         }
         if(GetClientTeam(iVictim) == CS_TEAM_CT && !g_baDiedBecauseRespawning[iVictim])
@@ -1329,10 +1332,10 @@ public TrySwapPlayers(iClient)
 
                         new String:sNickname[MAX_NAME_LENGTH];
                         GetClientName(iTarget, sNickname, sizeof(sNickname));
-                        PrintToChat(iClient, "  \x04[HNS] You have switched teams with %s.", sNickname);
+                        PrintToChat(iClient, "  \x04[HNS] %t", "Swapped", sNickname);
 
                         GetClientName(iClient, sNickname, sizeof(sNickname));
-                        PrintToChat(iTarget, "  \x04[HNS] You have switched teams with %s.", sNickname);
+                        PrintToChat(iTarget, "  \x04[HNS] %t", "Swapped", sNickname);
                     }
             }
     }
@@ -1426,7 +1429,7 @@ public Action:OnRoundEnd(Handle:hEvent, const String:name[], bool:dontBroadcast)
     
     if(iWinningTeam == CS_TEAM_T) {
         if(!g_iMaximumWinStreak || ++g_iTWinsInARow < g_iMaximumWinStreak)
-            PrintToChatAll("  \x04[HNS] Terrorists won.");
+            PrintToChatAll("  \x04[HNS] %t", "T Win");
         else {
             SwapTeams();
             g_iTWinsInARow = 0;
@@ -1436,7 +1439,7 @@ public Action:OnRoundEnd(Handle:hEvent, const String:name[], bool:dontBroadcast)
             CS_SetTeamScore(CS_TEAM_T, iCTScore);
             SetTeamScore(CS_TEAM_T, iCTScore);
             if(g_iMaximumWinStreak)
-                PrintToChatAll("  \x04[HNS] Ts have won too many rounds in a row. Teams have been swapped.");
+                PrintToChatAll("  \x04[HNS] %t", "T Win Team Swap");
         }
 
         for(new iClient = 1; iClient < MaxClients; iClient++) {
@@ -1449,10 +1452,10 @@ public Action:OnRoundEnd(Handle:hEvent, const String:name[], bool:dontBroadcast)
                             iDivider = 1; //getting the actual number of terrorists would be better
                         iPoints = g_iBonusPointsMultiplier * g_iTerroristsDeathCount / iDivider;            
                         CS_SetClientContributionScore(iClient, CS_GetClientContributionScore(iClient) + iPoints);
-                        PrintToChat(iClient, "  \x04[HNS] You got %d points for surviving the round and %d points for winning.", iPoints, g_iRoundPoints);
+                        PrintToChat(iClient, "  \x04[HNS] %t", "Points For T Surviving and Win", iPoints, g_iRoundPoints);
                     }
                     else
-                        PrintToChat(iClient, "  \x04[HNS] You got %d points for winning.", g_iRoundPoints);
+                        PrintToChat(iClient, "  \x04[HNS] %t", "Points For Win", g_iRoundPoints);
                 }
         }
     }
@@ -1462,11 +1465,11 @@ public Action:OnRoundEnd(Handle:hEvent, const String:name[], bool:dontBroadcast)
             if(IsClientInGame(iClient))
                 if(GetClientTeam(iClient) == CS_TEAM_CT) {
                     CS_SetClientContributionScore(iClient, CS_GetClientContributionScore(iClient) + g_iRoundPoints);
-                    PrintToChat(iClient, "  \x04[HNS] You got %d points for winning.", g_iRoundPoints);
+                    PrintToChat(iClient, "  \x04[HNS] %t", "Points For Win", g_iRoundPoints);
                 }
         }
         SwapTeams();
-        PrintToChatAll("  \x04[HNS] Counter-Terrorists won. Teams have been swapped.");
+        PrintToChatAll("  \x04[HNS] %t", "CT Win");
         g_iTWinsInARow = 0;
         //Set the team scores
         CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T));
@@ -1506,14 +1509,14 @@ stock GiveGrenades(iClient)
     }
 
     if(iLastType == -1)
-        PrintToChat(iClient, "  \x04[HNS] You haven't received any grenades this round.");
+        PrintToChat(iClient, "  \x04[HNS] %t", "No Grenades");
     else {
         new String:sGrenadeMessage[256];
         for(new i = 0; i < sizeof(iaReceived); i++) {
             if(iaReceived[i]) {
                 if(bAtLeastTwo && i != iFirstType) {
                     if(i == iLastType)
-                        StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), " and ");
+						Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s %T ", sGrenadeMessage, "And", iClient);
                     else
                         StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), ", ");
                 }
@@ -1522,14 +1525,16 @@ stock GiveGrenades(iClient)
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), sNumberTemp);
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), " ");
                 if(i == NADE_DECOY && g_bFrostNades)
-                    StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), "FrostNade");
+					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "FrostNade", iClient);
                 else
-                    StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), g_saGrenadeChatNames[i]);
+					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, g_saGrenadeChatNames[i], iClient);
                 if(iaReceived[i] > 1)
-                    StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), "s");
+					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Plural", iClient);
+				else
+					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
             }
         }
-        PrintToChat(iClient, "  \x04[HNS] You have received %s.", sGrenadeMessage);
+        PrintToChat(iClient, "  \x04[HNS] %t", "Grenades Received", sGrenadeMessage);
     }
 }
 
@@ -1639,16 +1644,16 @@ stock Freeze(iClient, Float:fDuration, iType, iAttacker = 0)
         LightCreate(coord, fDuration);
     }
     if(iAttacker == 0) {
-        PrintToChat(iClient, "  \x04[HNS] You are asleep for %.1f seconds.", fDuration);
+        PrintToChat(iClient, "  \x04[HNS] %t", "Frozen", fDuration);
     }
     else if(iAttacker == iClient) {
-        PrintToChat(iClient, "  \x04[HNS] You have frozen yourself for %.1f seconds dummy.", fDuration);
+        PrintToChat(iClient, "  \x04[HNS] %t", "Frozen Yourself", fDuration);
     }
     else if(iAttacker <= MaxClients) {
         if(IsClientInGame(iAttacker)) {
             decl String:sAttackerName[MAX_NAME_LENGTH];
             GetClientName(iAttacker, sAttackerName, sizeof(sAttackerName));
-            PrintToChat(iClient, "  \x04[HNS] You have been frozen by %s for %.1f seconds.", sAttackerName, fDuration);
+            PrintToChat(iClient, "  \x04[HNS] %t", "Frozen By", sAttackerName, fDuration);
         }
     }
     if(g_baFrozen[iClient]) {
@@ -1684,7 +1689,7 @@ public Action:Unfreeze(Handle:hTimer, any:iClient)
             GetClientEyePosition(iClient, faCoord);
             EmitAmbientSound(SOUND_UNFREEZE, faCoord, iClient, 55);
             if(IsPlayerAlive(iClient))
-                PrintToChat(iClient, "  \x04[HNS] You are free to go now.");
+                PrintToChat(iClient, "  \x04[HNS] %t", "Unfreeze");
         }
         else
             PrintToServer("Unfreeze attempted on non frozen client %d.", iClient);
@@ -1699,7 +1704,7 @@ public Action:UnfreezeCountdown(Handle:hTimer, any:iClient)
         g_baFrozen[iClient] = false;
         g_haFreezeTimer[iClient] = INVALID_HANDLE;
         if(IsPlayerAlive(iClient))
-            PrintToChat(iClient, "  \x04[HNS] The round has started.");
+            PrintToChat(iClient, "  \x04[HNS] %t", "Round Start");
     }
     return Plugin_Continue;
 }

@@ -1820,7 +1820,7 @@ public Action:Command_Rules(iClient, args)
 	PrintToChat(iClient, "Debug OK!");
 	new String:msg[4096];
 	GetConVarBool(g_hUseStandartRules) ? Format(msg, 4096, "%T", "Rules", iClient) : GetConVarString(g_hRulesLocation, msg, 4096);
-	ShowMOTDPanel(iClient, "Message Of The Day", "motd");
+	ShowMOTDPanel(iClient, "Rules", msg);
 
 	return Plugin_Handled;
 }

@@ -279,4 +279,8 @@
 		"en"			"You are not allowed to use the kill command."
 	}
 
+	"Rules"
+	{
+		"en"			"My hns rules."
+	}
 }

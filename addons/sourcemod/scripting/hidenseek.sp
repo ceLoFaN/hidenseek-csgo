@@ -61,9 +61,9 @@
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
 // Rules Defines
-#define RULES_LOCATION				  "myhnsrules.txt"
-#define RULES_STANDART				  "1"
-#define RULES_COMMAND				  "1"
+#define RULES_LOCATION                  "myhnsrules.txt"
+#define RULES_STANDART                  "1"
+#define RULES_COMMAND                  "1"
 
 
 // Fade Defines
@@ -277,124 +277,124 @@ new Handle:g_haProtectedConvar[sizeof(g_saProtectedConVars)] = {INVALID_HANDLE, 
 
 public OnPluginStart()
 {
-	//Load Translations
-	LoadTranslations("hidenseek.phrases");
+    //Load Translations
+    LoadTranslations("hidenseek.phrases");
 
-	//ConVars here
-	CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
-	g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
-	g_hCountdownTime = CreateConVar("hns_countdown_time", COUNTDOWN_TIME, "The countdown duration during which CTs are frozen", _, true, 0.0, true, 15.0);
-	g_hCountdownFade = CreateConVar("hns_countdown_fade", COUNTDOWN_FADE, "Fades the screen for CTs during countdown (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hAirAccelerate = CreateConVar("hns_airaccelerate", AIR_ACC, "The value at which sv_airaccelerate is being kept. Set to 0 to use sv_airaccelerate instead.", _, true, 12.0);
-	g_hRoundPoints = CreateConVar("hns_round_points", ROUND_POINTS, "Round points for every player in the winning team", _, true, 0.0);
-	g_hBonusPointsMultiplier = CreateConVar("hns_bonus_points_multiplier", BONUS_POINTS, "Bonus points for kills (CTs) and for surviving (Ts)", _, true, 1.0, true, 3.0);
-	g_hMaximumWinStreak = CreateConVar("hns_maximum_win_streak", MAXIMUM_WIN_STREAK, "The number of consecutive rounds won by T before the teams get swapped (0=DSBL)", _, true, 0.0);
-	g_hFlashbangChance = CreateConVar("hns_flashbang_chance", FLASHBANG_CHANCE, "The chance of getting a Flashbang as a Terrorist", _, true, 0.0, true, 1.0);
-	g_hMolotovChance = CreateConVar("hns_molotov_chance", MOLOTOV_CHANCE, "The chance of getting a Molotov as a Terrorist", _, true, 0.0, true, 1.0);
-	g_hSmokeGrenadeChance = CreateConVar("hns_smoke_grenade_chance", SMOKE_CHANCE, "The chance of getting a Smoke Grenade as a Terrorist", _, true, 0.0, true, 1.0);
-	g_hDecoyChance = CreateConVar("hns_decoy_chance", DECOY_CHANCE, "The chance of getting a Decoy as a Terrorist", _, true, 0.0, true, 1.0);
-	g_hHEGrenadeChance = CreateConVar("hns_he_grenade_chance", HE_CHANCE, "The chance of getting a HE Grenade as a Terrorist", _, true, 0.0, true, 1.0);
-	g_hFlashbangMaximumAmount = CreateConVar("hns_flashbang_maximum_amount", FLASHBANG_MAXIMUM_AMOUNT, "The maximum number of Flashbang a T can receive", _, true, 0.0, true, 10.0);
-	g_hMolotovMaximumAmount = CreateConVar("hns_molotov_maximum_amount", MOLOTOV_MAXIMUM_AMOUNT, "The maximum number of Molotovs a T can receive", _, true, 0.0, true, 10.0);
-	g_hSmokeGrenadeMaximumAmount = CreateConVar("hns_smoke_grenade_maximum_amount", SMOKE_MAXIMUM_AMOUNT, "The maximum number of Smoke Grenades a T can receive", _, true, 0.0, true, 10.0);
-	g_hDecoyMaximumAmount = CreateConVar("hns_decoy_maximum_amount", DECOY_MAXIMUM_AMOUNT, "The maximum number of Decoy Grenades a T can receive", _, true, 0.0, true, 10.0);
-	g_hHEGrenadeMaximumAmount = CreateConVar("hns_he_grenade_maximum_amount", HE_MAXIMUM_AMOUNT, "The maximum number of HE Grenades a T can receive", _, true, 0.0, true, 10.0);
-	g_hFlashBlindDisable = CreateConVar("hns_flash_blind_disable", NO_FLASH_BLIND, "Removes the flashbang blind effect for Ts and Spectators (0=NONE, 1=T, 2=T&SPEC)", _, true, 0.0, true, 2.0);
-	g_hBlockJoinTeam = CreateConVar("hns_block_jointeam", BLOCK_JOIN_TEAM, "Blocks the players' ability of changing teams", _, true, 0.0, true, 1.0);
-	g_hFrostNades = CreateConVar("hns_frostnades", FROSTNADES, "Turns Decoys into FrostNades (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hSelfFreeze = CreateConVar("hns_self_freeze", SELF_FREEZE, "Allows players to freeze themselves (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hFreezeRadius = CreateConVar("hns_freeze_radius", FREEZE_RADIUS, "The radius in which the players can get frozen (units)", _, true, 0.0, true, 500.0);
-	g_hAttackWhileFrozen = CreateConVar("hns_attack_while_frozen", ATTACK_WHILE_FROZEN, "Allows frozen players to attack (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hFreezeDuration = CreateConVar("hns_freeze_duration", FREEZE_DURATION, "Freeze duration caused by FrostNades", _, true, 0.0, true, 15.0);
-	g_hFreezeFade = CreateConVar("hns_freeze_fade", FREEZE_FADE, "Fades the screen for frozen player (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hFreezeGlow = CreateConVar("hns_freeze_glow", FREEZE_GLOW, "Creates a glowing sprite around frozen players (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hFrostNadesTrail = CreateConVar("hns_frostnades_trail", FROSTNADES_TRAIL, "Leaves a trail on the FrostNades path (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hFrostNadesDetonationRing = CreateConVar("hns_frostnades_detonation_ring", DETONATION_RING, "Adds a detonation effect to FrostNades (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hBlockConsoleKill = CreateConVar("hns_block_console_kill", BLOCK_CONSOLE_KILL, "Blocks the kill command (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hSuicidePointsPenalty = CreateConVar("hns_suicide_points_penalty", SUICIDE_POINTS_PENALTY, "The amount of points players lose when dying by fall without enemy assists", _, true, 0.0);
-	g_hMolotovFriendlyFire = CreateConVar("hns_molotov_friendly_fire", MOLOTOV_FRIENDLY_FIRE, "Allows molotov friendly fire (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-	g_hRespawnMode = CreateConVar("hns_respawn_mode", RESPAWN_MODE, "Turns the Respawn mode On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-	g_hBaseRespawnTime = CreateConVar("hns_base_respawn_time", BASE_RESPAWN_TIME, "The minimum time, without additions, it takes to respawn", _, true, 0.0);
-	g_hInvisibilityDuration = CreateConVar("hns_respawn_invisibility_duration", INVISIBILITY_DURATION, "The time in seconds Ts get invisibility after respawning.", _, true, 0.0);
-	g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
-	g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
-	g_hUseStandartRules = CreateConVar("hns_standartrules", RULES_STANDART, "If 1 used rules from translations. 0 — used from hns_ruleslocation cvar.", _, true, 0.0, true, 1.0);
-	g_hRulesLocation = CreateConVar("hns_ruleslocation", RULES_LOCATION, "Path to file or URL to Rules file. (Path to file with rules inside csgo folder e.g. myhnsrules.txt)");
-	g_hRulesCmd = CreateConVar("hns_rulescommand", RULES_COMMAND, "Enable !rules command. Used for escape plugins conflict.");
-	// Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
-	AutoExecConfig(true, "hidenseek");
+    //ConVars here
+    CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
+    g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
+    g_hCountdownTime = CreateConVar("hns_countdown_time", COUNTDOWN_TIME, "The countdown duration during which CTs are frozen", _, true, 0.0, true, 15.0);
+    g_hCountdownFade = CreateConVar("hns_countdown_fade", COUNTDOWN_FADE, "Fades the screen for CTs during countdown (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hAirAccelerate = CreateConVar("hns_airaccelerate", AIR_ACC, "The value at which sv_airaccelerate is being kept. Set to 0 to use sv_airaccelerate instead.", _, true, 12.0);
+    g_hRoundPoints = CreateConVar("hns_round_points", ROUND_POINTS, "Round points for every player in the winning team", _, true, 0.0);
+    g_hBonusPointsMultiplier = CreateConVar("hns_bonus_points_multiplier", BONUS_POINTS, "Bonus points for kills (CTs) and for surviving (Ts)", _, true, 1.0, true, 3.0);
+    g_hMaximumWinStreak = CreateConVar("hns_maximum_win_streak", MAXIMUM_WIN_STREAK, "The number of consecutive rounds won by T before the teams get swapped (0=DSBL)", _, true, 0.0);
+    g_hFlashbangChance = CreateConVar("hns_flashbang_chance", FLASHBANG_CHANCE, "The chance of getting a Flashbang as a Terrorist", _, true, 0.0, true, 1.0);
+    g_hMolotovChance = CreateConVar("hns_molotov_chance", MOLOTOV_CHANCE, "The chance of getting a Molotov as a Terrorist", _, true, 0.0, true, 1.0);
+    g_hSmokeGrenadeChance = CreateConVar("hns_smoke_grenade_chance", SMOKE_CHANCE, "The chance of getting a Smoke Grenade as a Terrorist", _, true, 0.0, true, 1.0);
+    g_hDecoyChance = CreateConVar("hns_decoy_chance", DECOY_CHANCE, "The chance of getting a Decoy as a Terrorist", _, true, 0.0, true, 1.0);
+    g_hHEGrenadeChance = CreateConVar("hns_he_grenade_chance", HE_CHANCE, "The chance of getting a HE Grenade as a Terrorist", _, true, 0.0, true, 1.0);
+    g_hFlashbangMaximumAmount = CreateConVar("hns_flashbang_maximum_amount", FLASHBANG_MAXIMUM_AMOUNT, "The maximum number of Flashbang a T can receive", _, true, 0.0, true, 10.0);
+    g_hMolotovMaximumAmount = CreateConVar("hns_molotov_maximum_amount", MOLOTOV_MAXIMUM_AMOUNT, "The maximum number of Molotovs a T can receive", _, true, 0.0, true, 10.0);
+    g_hSmokeGrenadeMaximumAmount = CreateConVar("hns_smoke_grenade_maximum_amount", SMOKE_MAXIMUM_AMOUNT, "The maximum number of Smoke Grenades a T can receive", _, true, 0.0, true, 10.0);
+    g_hDecoyMaximumAmount = CreateConVar("hns_decoy_maximum_amount", DECOY_MAXIMUM_AMOUNT, "The maximum number of Decoy Grenades a T can receive", _, true, 0.0, true, 10.0);
+    g_hHEGrenadeMaximumAmount = CreateConVar("hns_he_grenade_maximum_amount", HE_MAXIMUM_AMOUNT, "The maximum number of HE Grenades a T can receive", _, true, 0.0, true, 10.0);
+    g_hFlashBlindDisable = CreateConVar("hns_flash_blind_disable", NO_FLASH_BLIND, "Removes the flashbang blind effect for Ts and Spectators (0=NONE, 1=T, 2=T&SPEC)", _, true, 0.0, true, 2.0);
+    g_hBlockJoinTeam = CreateConVar("hns_block_jointeam", BLOCK_JOIN_TEAM, "Blocks the players' ability of changing teams", _, true, 0.0, true, 1.0);
+    g_hFrostNades = CreateConVar("hns_frostnades", FROSTNADES, "Turns Decoys into FrostNades (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hSelfFreeze = CreateConVar("hns_self_freeze", SELF_FREEZE, "Allows players to freeze themselves (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hFreezeRadius = CreateConVar("hns_freeze_radius", FREEZE_RADIUS, "The radius in which the players can get frozen (units)", _, true, 0.0, true, 500.0);
+    g_hAttackWhileFrozen = CreateConVar("hns_attack_while_frozen", ATTACK_WHILE_FROZEN, "Allows frozen players to attack (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hFreezeDuration = CreateConVar("hns_freeze_duration", FREEZE_DURATION, "Freeze duration caused by FrostNades", _, true, 0.0, true, 15.0);
+    g_hFreezeFade = CreateConVar("hns_freeze_fade", FREEZE_FADE, "Fades the screen for frozen player (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hFreezeGlow = CreateConVar("hns_freeze_glow", FREEZE_GLOW, "Creates a glowing sprite around frozen players (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hFrostNadesTrail = CreateConVar("hns_frostnades_trail", FROSTNADES_TRAIL, "Leaves a trail on the FrostNades path (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hFrostNadesDetonationRing = CreateConVar("hns_frostnades_detonation_ring", DETONATION_RING, "Adds a detonation effect to FrostNades (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hBlockConsoleKill = CreateConVar("hns_block_console_kill", BLOCK_CONSOLE_KILL, "Blocks the kill command (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hSuicidePointsPenalty = CreateConVar("hns_suicide_points_penalty", SUICIDE_POINTS_PENALTY, "The amount of points players lose when dying by fall without enemy assists", _, true, 0.0);
+    g_hMolotovFriendlyFire = CreateConVar("hns_molotov_friendly_fire", MOLOTOV_FRIENDLY_FIRE, "Allows molotov friendly fire (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hRespawnMode = CreateConVar("hns_respawn_mode", RESPAWN_MODE, "Turns the Respawn mode On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+    g_hBaseRespawnTime = CreateConVar("hns_base_respawn_time", BASE_RESPAWN_TIME, "The minimum time, without additions, it takes to respawn", _, true, 0.0);
+    g_hInvisibilityDuration = CreateConVar("hns_respawn_invisibility_duration", INVISIBILITY_DURATION, "The time in seconds Ts get invisibility after respawning.", _, true, 0.0);
+    g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
+    g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
+    g_hUseStandartRules = CreateConVar("hns_standartrules", RULES_STANDART, "If 1 used rules from translations. 0 — used from hns_ruleslocation cvar.", _, true, 0.0, true, 1.0);
+    g_hRulesLocation = CreateConVar("hns_ruleslocation", RULES_LOCATION, "Path to file or URL to Rules file. (Path to file with rules inside csgo folder e.g. myhnsrules.txt)");
+    g_hRulesCmd = CreateConVar("hns_rulescommand", RULES_COMMAND, "Enable !rules command. Used for escape plugins conflict.");
+    // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
+    AutoExecConfig(true, "hidenseek");
 
-	//Enforce some server ConVars
-	for(new i = 0; i < sizeof(g_saProtectedConVars); i++)
-	{
-		g_haProtectedConvar[i] = FindConVar(g_saProtectedConVars[i]);
-		SetConVarInt(g_haProtectedConvar[i], g_iaForcedValues[i], true);
-		HookConVarChange(g_haProtectedConvar[i], OnCvarChange);
-	}
-	HookConVarChange(g_hAirAccelerate, OnCvarChange);    // hns_airaccelerate -> sv_airaccelerate
-	HookConVarChange(g_hEnabled, OnCvarChange);
-	HookConVarChange(g_hCountdownTime, OnCvarChange);
-	HookConVarChange(g_hCountdownFade, OnCvarChange);
-	HookConVarChange(g_hRoundPoints, OnCvarChange);
-	HookConVarChange(g_hBonusPointsMultiplier, OnCvarChange);
-	HookConVarChange(g_hMaximumWinStreak, OnCvarChange);
-	HookConVarChange(g_hFlashbangChance, OnCvarChange);
-	HookConVarChange(g_hMolotovChance, OnCvarChange);
-	HookConVarChange(g_hSmokeGrenadeChance, OnCvarChange);
-	HookConVarChange(g_hDecoyChance, OnCvarChange);
-	HookConVarChange(g_hHEGrenadeChance, OnCvarChange);
-	HookConVarChange(g_hFlashbangMaximumAmount, OnCvarChange);
-	HookConVarChange(g_hMolotovMaximumAmount, OnCvarChange);
-	HookConVarChange(g_hSmokeGrenadeMaximumAmount, OnCvarChange);
-	HookConVarChange(g_hDecoyMaximumAmount, OnCvarChange);
-	HookConVarChange(g_hHEGrenadeMaximumAmount, OnCvarChange);
-	HookConVarChange(g_hFlashBlindDisable, OnCvarChange);
-	HookConVarChange(g_hBlockJoinTeam, OnCvarChange);
-	HookConVarChange(g_hFrostNades, OnCvarChange);
-	HookConVarChange(g_hSelfFreeze, OnCvarChange);
-	HookConVarChange(g_hAttackWhileFrozen, OnCvarChange);
-	HookConVarChange(g_hFreezeDuration, OnCvarChange);
-	HookConVarChange(g_hFreezeFade, OnCvarChange);
-	HookConVarChange(g_hFreezeGlow, OnCvarChange);
-	HookConVarChange(g_hFrostNadesTrail, OnCvarChange);
-	HookConVarChange(g_hFreezeRadius, OnCvarChange);
-	HookConVarChange(g_hFrostNadesDetonationRing, OnCvarChange);
-	HookConVarChange(g_hBlockConsoleKill, OnCvarChange);
-	HookConVarChange(g_hSuicidePointsPenalty, OnCvarChange);
-	HookConVarChange(g_hMolotovFriendlyFire, OnCvarChange);
-	HookConVarChange(g_hRespawnMode, OnCvarChange);
-	HookConVarChange(g_hBaseRespawnTime, OnCvarChange);
-	HookConVarChange(g_hInvisibilityDuration, OnCvarChange);
-	HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
-	HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
+    //Enforce some server ConVars
+    for(new i = 0; i < sizeof(g_saProtectedConVars); i++)
+    {
+        g_haProtectedConvar[i] = FindConVar(g_saProtectedConVars[i]);
+        SetConVarInt(g_haProtectedConvar[i], g_iaForcedValues[i], true);
+        HookConVarChange(g_haProtectedConvar[i], OnCvarChange);
+    }
+    HookConVarChange(g_hAirAccelerate, OnCvarChange);    // hns_airaccelerate -> sv_airaccelerate
+    HookConVarChange(g_hEnabled, OnCvarChange);
+    HookConVarChange(g_hCountdownTime, OnCvarChange);
+    HookConVarChange(g_hCountdownFade, OnCvarChange);
+    HookConVarChange(g_hRoundPoints, OnCvarChange);
+    HookConVarChange(g_hBonusPointsMultiplier, OnCvarChange);
+    HookConVarChange(g_hMaximumWinStreak, OnCvarChange);
+    HookConVarChange(g_hFlashbangChance, OnCvarChange);
+    HookConVarChange(g_hMolotovChance, OnCvarChange);
+    HookConVarChange(g_hSmokeGrenadeChance, OnCvarChange);
+    HookConVarChange(g_hDecoyChance, OnCvarChange);
+    HookConVarChange(g_hHEGrenadeChance, OnCvarChange);
+    HookConVarChange(g_hFlashbangMaximumAmount, OnCvarChange);
+    HookConVarChange(g_hMolotovMaximumAmount, OnCvarChange);
+    HookConVarChange(g_hSmokeGrenadeMaximumAmount, OnCvarChange);
+    HookConVarChange(g_hDecoyMaximumAmount, OnCvarChange);
+    HookConVarChange(g_hHEGrenadeMaximumAmount, OnCvarChange);
+    HookConVarChange(g_hFlashBlindDisable, OnCvarChange);
+    HookConVarChange(g_hBlockJoinTeam, OnCvarChange);
+    HookConVarChange(g_hFrostNades, OnCvarChange);
+    HookConVarChange(g_hSelfFreeze, OnCvarChange);
+    HookConVarChange(g_hAttackWhileFrozen, OnCvarChange);
+    HookConVarChange(g_hFreezeDuration, OnCvarChange);
+    HookConVarChange(g_hFreezeFade, OnCvarChange);
+    HookConVarChange(g_hFreezeGlow, OnCvarChange);
+    HookConVarChange(g_hFrostNadesTrail, OnCvarChange);
+    HookConVarChange(g_hFreezeRadius, OnCvarChange);
+    HookConVarChange(g_hFrostNadesDetonationRing, OnCvarChange);
+    HookConVarChange(g_hBlockConsoleKill, OnCvarChange);
+    HookConVarChange(g_hSuicidePointsPenalty, OnCvarChange);
+    HookConVarChange(g_hMolotovFriendlyFire, OnCvarChange);
+    HookConVarChange(g_hRespawnMode, OnCvarChange);
+    HookConVarChange(g_hBaseRespawnTime, OnCvarChange);
+    HookConVarChange(g_hInvisibilityDuration, OnCvarChange);
+    HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
+    HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
 
-	//Hooked'em
-	HookEvent("player_spawn", OnPlayerSpawn);
-	HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
-	HookEvent("round_end", OnRoundEnd);
-	HookEvent("item_pickup", OnItemPickUp);
-	HookEvent("player_death", OnPlayerDeath);
-	HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
-	HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
-	HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
+    //Hooked'em
+    HookEvent("player_spawn", OnPlayerSpawn);
+    HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
+    HookEvent("round_end", OnRoundEnd);
+    HookEvent("item_pickup", OnItemPickUp);
+    HookEvent("player_death", OnPlayerDeath);
+    HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
+    HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
+    HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
 
-	AddCommandListener(Command_JoinTeam, "jointeam");
-	AddCommandListener(Command_Kill, "kill");
+    AddCommandListener(Command_JoinTeam, "jointeam");
+    AddCommandListener(Command_Kill, "kill");
 
-	g_fGrenadeSpeedMultiplier = 250.0 / 245.0;
-	g_bEnabled = true;
+    g_fGrenadeSpeedMultiplier = 250.0 / 245.0;
+    g_bEnabled = true;
 
-	RegConsoleCmd("toggleknife", Command_ToggleKnife);
-	RegConsoleCmd("respawn", Command_Respawn);
-	RegConsoleCmd("sm_hnsrules", Command_Rules);
-	if (GetConVarBool(g_hRulesCmd)) {
-		RegConsoleCmd("sm_rules", Command_Rules);
-	}
+    RegConsoleCmd("toggleknife", Command_ToggleKnife);
+    RegConsoleCmd("respawn", Command_Respawn);
+    RegConsoleCmd("sm_hnsrules", Command_Rules);
+    if (GetConVarBool(g_hRulesCmd)) {
+        RegConsoleCmd("sm_rules", Command_Rules);
+    }
 
-	ServerCommand("mp_backup_round_file \"\"");
-	ServerCommand("mp_backup_round_file_last \"\"");
-	ServerCommand("mp_backup_round_file_pattern \"\"");
-	ServerCommand("mp_backup_round_auto 0");
+    ServerCommand("mp_backup_round_file \"\"");
+    ServerCommand("mp_backup_round_file_last \"\"");
+    ServerCommand("mp_backup_round_file_pattern \"\"");
+    ServerCommand("mp_backup_round_auto 0");
 }
 
 public OnConfigsExecuted()
@@ -1273,7 +1273,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
                     if(!g_bRespawnMode)
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
-							"Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
+                            "Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
                     else {
                         g_baAvailableToSwap[iVictim] = false;
                         g_baAvailableToSwap[iAttacker] = false;
@@ -1531,7 +1531,7 @@ stock GiveGrenades(iClient)
             if(iaReceived[i]) {
                 if(bAtLeastTwo && i != iFirstType) {
                     if(i == iLastType)
-						Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s %T ", sGrenadeMessage, "And", iClient);
+                        Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s %T ", sGrenadeMessage, "And", iClient);
                     else
                         StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), ", ");
                 }
@@ -1540,13 +1540,13 @@ stock GiveGrenades(iClient)
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), sNumberTemp);
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), " ");
                 if(i == NADE_DECOY && g_bFrostNades)
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "FrostNade", iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "FrostNade", iClient);
                 else
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, g_saGrenadeChatNames[i], iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, g_saGrenadeChatNames[i], iClient);
                 if(iaReceived[i] > 1)
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Plural", iClient);
-				else
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Plural", iClient);
+                else
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
             }
         }
         PrintToChat(iClient, "  \x04[HNS] %t", "Grenades Received", sGrenadeMessage);
@@ -1817,10 +1817,10 @@ DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeap
 
 public Action:Command_Rules(iClient, args)
 {
-	PrintToChat(iClient, "Debug OK!");
-	new String:msg[4096];
-	GetConVarBool(g_hUseStandartRules) ? Format(msg, 4096, "%T", "Rules", iClient) : GetConVarString(g_hRulesLocation, msg, 4096);
-	ShowMOTDPanel(iClient, "Rules", msg);
+    PrintToChat(iClient, "Debug OK!");
+    new String:msg[4096];
+    GetConVarBool(g_hUseStandartRules) ? Format(msg, 4096, "%T", "Rules", iClient) : GetConVarString(g_hRulesLocation, msg, 4096);
+    ShowMOTDPanel(iClient, "Rules", msg);
 
-	return Plugin_Handled;
+    return Plugin_Handled;
 }

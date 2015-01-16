@@ -61,8 +61,6 @@
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
 // Rules Defines
-#define RULES_LOCATION                  "myhnsrules.txt"
-#define RULES_STANDART                  "1"
 #define RULES_COMMAND                  "1"
 
 
@@ -103,6 +101,9 @@
 #define SOUND_UNFREEZE             "physics/glass/glass_impact_bullet4.wav"
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
+
+// Rules Defines
+#define RULES_LOCATION "rules.html"
 
 public Plugin:myinfo =
 {
@@ -149,8 +150,6 @@ new Handle:g_hBaseRespawnTime = INVALID_HANDLE;
 new Handle:g_hInvisibilityDuration = INVALID_HANDLE;
 new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
-new Handle:g_hUseStandartRules = INVALID_HANDLE;
-new Handle:g_hRulesLocation = INVALID_HANDLE;
 new Handle:g_hRulesCmd = INVALID_HANDLE;
 
 new bool:g_bEnabled;
@@ -318,8 +317,6 @@ public OnPluginStart()
     g_hInvisibilityDuration = CreateConVar("hns_respawn_invisibility_duration", INVISIBILITY_DURATION, "The time in seconds Ts get invisibility after respawning.", _, true, 0.0);
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
-    g_hUseStandartRules = CreateConVar("hns_standartrules", RULES_STANDART, "If 1 used rules from translations. 0 — used from hns_ruleslocation cvar.", _, true, 0.0, true, 1.0);
-    g_hRulesLocation = CreateConVar("hns_ruleslocation", RULES_LOCATION, "Path to file or URL to Rules file. (Path to file with rules inside csgo folder e.g. myhnsrules.txt)");
     g_hRulesCmd = CreateConVar("hns_rulescommand", RULES_COMMAND, "Enable !rules command. Used for escape plugins conflict.");
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
@@ -387,9 +384,7 @@ public OnPluginStart()
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
     RegConsoleCmd("respawn", Command_Respawn);
     RegConsoleCmd("sm_hnsrules", Command_Rules);
-    if (GetConVarBool(g_hRulesCmd)) {
-        RegConsoleCmd("sm_rules", Command_Rules);
-    }
+    RegConsoleCmd("sm_rules", Command_Rules2);
 
     ServerCommand("mp_backup_round_file \"\"");
     ServerCommand("mp_backup_round_file_last \"\"");
@@ -569,6 +564,8 @@ public OnMapStart()
         RemoveBombsites();
     }
     CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+
+    AddFileToDownloadsTable(RULES_LOCATION); // Send rules on client
 }
 
 public Action:RespawnDeadPlayers(Handle:hTimer) 
@@ -1815,12 +1812,18 @@ DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeap
     }
 }
 
+public Action:Command_Rules2(iClient, args)
+{
+    if (GetConVarBool(g_hRulesCmd))
+        Command_Rules(iClient, args);
+
+    return Plugin_Handled;
+}
+
 public Action:Command_Rules(iClient, args)
 {
-    PrintToChat(iClient, "Debug OK!");
-    new String:msg[4096];
-    GetConVarBool(g_hUseStandartRules) ? Format(msg, 4096, "%T", "Rules", iClient) : GetConVarString(g_hRulesLocation, msg, 4096);
-    ShowMOTDPanel(iClient, "Rules", msg);
+    PrintToChatAll("Debug, OK!");
+    ShowMOTDPanel(iClient, "Rules", RULES_LOCATION, MOTDPANEL_TYPE_URL);
 
     return Plugin_Handled;
 }

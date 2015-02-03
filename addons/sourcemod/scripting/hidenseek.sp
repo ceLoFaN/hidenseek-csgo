@@ -60,9 +60,6 @@
 #define INVISIBILITY_BREAK_DISTANCE   "200.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
-// Rules Defines
-#define RULES_COMMAND                  "1"
-
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -101,9 +98,6 @@
 #define SOUND_UNFREEZE             "physics/glass/glass_impact_bullet4.wav"
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
-
-// Rules Defines
-#define RULES_LOCATION "rules.html"
 
 public Plugin:myinfo =
 {
@@ -150,7 +144,6 @@ new Handle:g_hBaseRespawnTime = INVALID_HANDLE;
 new Handle:g_hInvisibilityDuration = INVALID_HANDLE;
 new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
-new Handle:g_hRulesCmd = INVALID_HANDLE;
 
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
@@ -235,7 +228,7 @@ new const String:g_saGrenadeChatNames[][] = {
     "Decoy Grenade",
     "Incendiary Grenade"
 };
-new const g_iaGrenadeOffsets[] = {16, 18, 17, 15, 19, 18};
+new const g_iaGrenadeOffsets[] = {15, 17, 16, 14, 18, 17};
 
 //Add your protected ConVars here!
 new const String:g_saProtectedConVars[][] = {
@@ -317,7 +310,6 @@ public OnPluginStart()
     g_hInvisibilityDuration = CreateConVar("hns_respawn_invisibility_duration", INVISIBILITY_DURATION, "The time in seconds Ts get invisibility after respawning.", _, true, 0.0);
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
-    g_hRulesCmd = CreateConVar("hns_rulescommand", RULES_COMMAND, "Enable !rules command. Used for escape plugins conflict.");
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -383,8 +375,6 @@ public OnPluginStart()
 
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
     RegConsoleCmd("respawn", Command_Respawn);
-    RegConsoleCmd("sm_hnsrules", Command_Rules);
-    RegConsoleCmd("sm_rules", Command_Rules2);
 
     ServerCommand("mp_backup_round_file \"\"");
     ServerCommand("mp_backup_round_file_last \"\"");
@@ -564,8 +554,6 @@ public OnMapStart()
         RemoveBombsites();
     }
     CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-
-    AddFileToDownloadsTable(RULES_LOCATION); // Send rules on client
 }
 
 public Action:RespawnDeadPlayers(Handle:hTimer) 
@@ -642,7 +630,7 @@ public Action:FirstCountdownMessage(Handle:hTimer, any:iClient)
 {
     new iCountdownTimeFloor = RoundToFloor(g_fCountdownTime);
     if(IsClientInGame(iClient))
-        PrintCenterText(iClient, "\n  The round will start in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+        PrintCenterText(iClient, "\n  %t", "Start Countdown", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
 }
 
 public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
@@ -653,7 +641,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient)) {
                 new iTimeDelta = iCountdownTimeFloor - g_iCountdownCount;
-                PrintCenterText(iClient, "\n  The round will start in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+                PrintCenterText(iClient, "\n  %t", "Start Countdown", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
             }
         }
         return Plugin_Continue;
@@ -663,7 +651,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         g_iInitialTerroristsCount = GetTeamClientCount(CS_TEAM_T);
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient))
-                PrintCenterText(iClient, "\n  The round has started.");
+                PrintCenterText(iClient, "\n  %t", "Round Start");
         }
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hShowCountdownMessage = INVALID_HANDLE;
@@ -995,14 +983,14 @@ public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
     if(g_iaRespawnCountdownCount[iClient] < g_fCountdownTime) {
         if(IsClientInGame(iClient)) {
             new iTimeDelta = iCountdownTimeFloor - g_iaRespawnCountdownCount[iClient];
-            PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+            PrintCenterText(iClient, "\n  %t", "Wake Up", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
         }
         return Plugin_Continue;
     }
     else {
         g_iaRespawnCountdownCount[iClient] = 0;
         if(IsClientInGame(iClient))
-            PrintCenterText(iClient, "\n  You are ready to go.");
+            PrintCenterText(iClient, "\n  %t", "Ready To Go");
         //EmitSoundToAll(SOUND_GOGOGO);
         g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
@@ -1050,7 +1038,7 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                 if(g_fCTRespawnSleepDuration) {
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
-                    PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+                    PrintCenterText(iClient, "\n  %t", "Wake Up", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
                     if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
                         KillTimer(g_haRespawnFreezeCountdown[iClient]);
                         g_iaRespawnCountdownCount[iClient] = 0;
@@ -1810,36 +1798,4 @@ DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeap
             RemoveEdict(iPointHurt);
         }
     }
-}
-
-public Action:Command_Rules2(iClient, args)
-{
-    if (GetConVarBool(g_hRulesCmd))
-        Command_Rules(iClient, args);
-
-    return Plugin_Handled;
-}
-
-public Action:Command_Rules(iClient, args)
-{
-    PrintToChatAll("Debug, OK!");
-    ShowMOTDPanel(iClient, "Rules", "file:///C:/rules.html", MOTDPANEL_TYPE_URL);
-//    LoadMOTDPanelHidden(iClient, "Rules", "file:///./rules.html", MOTDPANEL_TYPE_URL);
-    new String:buffer[256];
-    GetGameFolderName(buffer, 256);
-    PrintToChat(iClient, "%s", buffer);
-
-    return Plugin_Handled;
-}
-
-public LoadMOTDPanelHidden(client, const String:title[], const  String:msg[], type) {
-    decl String:num[3];
-    new Handle:Kv = CreateKeyValues("data");
-    IntToString(type, num, sizeof(num));
-    
-    KvSetString(Kv, "title", title);
-    KvSetString(Kv, "type", num);
-    KvSetString(Kv, "msg", msg);
-    ShowVGUIPanel(client, "info", Kv, true);
-    CloseHandle(Kv);
 }

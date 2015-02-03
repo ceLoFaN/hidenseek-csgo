@@ -5,59 +5,68 @@
 	"Toggle Knife On" // For toggleknife cmd
 	{
 		"en"			"Your knife is now on."
-		"ru"			"Ваш нож виден."
+		"ru"			"Отображение ножа включено."
 	}
 	
 	"Toggle Knife Off" // For toggleknife cmd
 	{
 		"en"			"Your knife is now off."
-		"ru"			"Ваш нож не виден."
+		"ru"			"Отображение ножа выключено."
 	}
 	
 	"Respawn Aborted Off"
 	{
 		"en"			"You can't respawn if the server is not running Respawn Mode."
+		"ru"			"Вы не можете возродиться, когда Респаун режим отключен."
 	}
 	
 	"Respawn Aborted Alive"
 	{
 		"en"			"You are already respawning."
+		"ru"			"Вы уже возродились."
 	}
 	
 	"Respawn Aborted In Flight"
 	{
 		"en"			"You must be on the ground in order to use this command."
+		"ru"			"Вы должны быть на земле, чтобы использовать команду."
 	}
 	
 	"Respawn Aborted Enemy Near"
 	{
 		"en"			"You are too close to an enemy to use this command."
+		"ru"			"Вы не можете использовать команду рядом с противником."
 	}
 	
 	"Invisible On"
 	{
 		"#format"		"{1:.1f}"
 		"en"			"You are now invisible for {1} seconds."
+		"ru"			"Вы будете невидимы в течении {1} секунд."
 	}
 	
 	"Invisible Off"
 	{
 		"en"			"You are now visible again."
+		"ru"			"Вы снова видимы."
 	}
 	
 	"Invisibility Broken Enemy Near"
 	{
 		"en"			"You got too close to an enemy and your invisibility was broken."
+		"ru"			"Невидимость пропала т.к. вы подошли слишком близко к противнику."
 	}
 	
 	"Invisibility Broken Climb"
 	{
 		"en"			"You are no longer invisibile because you climbed a ladder."
+		"ru"			"Невидимость пропала т.к. вы залезли на лестницу."
 	}
 	
 	"Invisibility Broken Threw Grenade"
 	{
 		"en"			"You are no longer invisibile because you threw a grenade."
+		"ru"			"Невидимость пропала т.к. вы кинули гранату."
 	}
 	
 	"Team Change Deny Alive"
@@ -94,6 +103,7 @@
 	"Invalid Team"
 	{
 		"en"			"You must choose a valid team in order to respawn."
+		"ru"			"Вы должны выбрать корректную команду для возможности возродиться."
 	}
 	
 	"Points For Killing"
@@ -107,12 +117,14 @@
 	{
 		"#format"		"{1:s},{2:d},{3:s}"
 		"en"			"You killed {1} for {2} point{3} and you have swapped teams with him."
+		"ru"			"Вы убиты {1} получив {2} оч. Вас поменяют командами."
 	}
 	
 	"Killing Notify Victim"
 	{
 		"#format"		"{1:s}"
 		"en"			"You were killed by {1} and have swapped teams with him."
+		"ru"			"Вы убиты {1}. Вас поменяют командами."
 	}
 	
 	"Died By Falling"
@@ -126,6 +138,7 @@
 	{
 		"#format"		"{1:s}"
 		"en"			"You have switched teams with {1}."
+		"ru"			"Вы поменялись командами с {1}."
 	}
 	
 	"T Win"
@@ -163,12 +176,14 @@
 	"No Grenades"
 	{
 		"en"			"You haven't received any grenades this round."
+		"ru"			"Вы не получаете гранат в этом раунде."
 	}
 	
 	"Grenades Received"
 	{
 		"#format"		"{1:s}"
 		"en"			"You have received {1}."
+		"ru"			"Вы получили гранаты: {1}."
 	}
 	
 	"Frozen"
@@ -182,7 +197,7 @@
 	{
 		"#format"		"{1:.1f}"
 		"en"			"You have frozen yourself for {1} seconds dummy."
-		"ru"			"Вы заморозили себя на {1} с." // Лох
+		"ru"			"Вы заморозили себя на {1} с."
 	}
 	
 	"Frozen By"
@@ -221,21 +236,25 @@
 	"Smoke Grenade"
 	{
 		"en"			"Smoke Grenade"
+		"ru"			"дымов"
 	}
 	
 	"HE Grenade"
 	{
 		"en"			"HE Grenade"
+		"ru"			"осколочн"
 	}
 	
 	"Decoy Grenade"
 	{
 		"en"			"Decoy Grenade"
+		"ru"			"ложн"
 	}
 	
 	"Incendiary Grenade"
 	{
 		"en"			"Incendiary Grenade"
+		"ru"			"зажигательн"
 	}
 	
 	"FrostNade"
@@ -262,25 +281,49 @@
 		"ru"			"ые(ие)"
 	}
 	
+	//Center and Hint phrases
+	
+	"Start Countdown"
+	{
+		"#format"		"{1:d},{2:s}"
+		"en"			"The round will start in {1} second{2}."
+		"ru"			"Раунд начнётся через {1} с."
+	}
+	
+	"Round Start"
+	{
+		"en"			"The round has started."
+		"ru"			"Раунд начался."
+	}
+	
+	"Wake Up"
+	{
+		"#format"		"{1:d},{2:s}"
+		"en"			"You will wake up in {1} second{2}."
+	}
+	
+	"Ready To Go"
+	{
+		"en"			"You are ready to go."
+	}
+	
 	//Console phrases
 	
 	"Spectate Deny Alive"
 	{
 		"en"			"You are not allowed to go spectating while you're alive."
+		"ru"			"Запрещено присоединяться к сперктаторам, пока вы живы."
 	}
 	
 	"Invalid Team Console"
 	{
 		"en"			"You are trying to join an invalid team."
+		"ru"			"Некорректный индекс команды."
 	}
 	
 	"Kill Deny"
 	{
 		"en"			"You are not allowed to use the kill command."
-	}
-
-	"Rules"
-	{
-		"en"			"My hns rules."
+		"ru"			"Вам запрещено использовать эту команду."
 	}
 }

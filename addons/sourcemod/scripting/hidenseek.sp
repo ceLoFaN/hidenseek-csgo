@@ -1823,7 +1823,23 @@ public Action:Command_Rules2(iClient, args)
 public Action:Command_Rules(iClient, args)
 {
     PrintToChatAll("Debug, OK!");
-    ShowMOTDPanel(iClient, "Rules", RULES_LOCATION, MOTDPANEL_TYPE_URL);
+    ShowMOTDPanel(iClient, "Rules", "file:///C:/rules.html", MOTDPANEL_TYPE_URL);
+//    LoadMOTDPanelHidden(iClient, "Rules", "file:///./rules.html", MOTDPANEL_TYPE_URL);
+    new String:buffer[256];
+    GetGameFolderName(buffer, 256);
+    PrintToChat(iClient, "%s", buffer);
 
     return Plugin_Handled;
+}
+
+public LoadMOTDPanelHidden(client, const String:title[], const  String:msg[], type) {
+    decl String:num[3];
+    new Handle:Kv = CreateKeyValues("data");
+    IntToString(type, num, sizeof(num));
+    
+    KvSetString(Kv, "title", title);
+    KvSetString(Kv, "type", num);
+    KvSetString(Kv, "msg", msg);
+    ShowVGUIPanel(client, "info", Kv, true);
+    CloseHandle(Kv);
 }

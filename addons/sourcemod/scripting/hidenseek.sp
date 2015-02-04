@@ -269,8 +269,8 @@ new Handle:g_haProtectedConvar[sizeof(g_saProtectedConVars)] = {INVALID_HANDLE, 
 
 public OnPluginStart()
 {
-	//Load Translations
-	LoadTranslations("hidenseek.phrases");
+    //Load Translations
+    LoadTranslations("hidenseek.phrases");
 
     //ConVars here
     CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
@@ -311,6 +311,7 @@ public OnPluginStart()
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
+    AutoExecConfig(true, "hidenseek");
 
     //Enforce some server ConVars
     for(new i = 0; i < sizeof(g_saProtectedConVars); i++)
@@ -355,7 +356,7 @@ public OnPluginStart()
     HookConVarChange(g_hInvisibilityDuration, OnCvarChange);
     HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
     HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
-    
+
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
     HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
@@ -365,17 +366,16 @@ public OnPluginStart()
     HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
-    
+
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
-    
+
     g_fGrenadeSpeedMultiplier = 250.0 / 245.0;
     g_bEnabled = true;
-    
+
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
     RegConsoleCmd("respawn", Command_Respawn);
-    AutoExecConfig(true, "hidenseek");
-    
+
     ServerCommand("mp_backup_round_file \"\"");
     ServerCommand("mp_backup_round_file_last \"\"");
     ServerCommand("mp_backup_round_file_pattern \"\"");
@@ -630,7 +630,7 @@ public Action:FirstCountdownMessage(Handle:hTimer, any:iClient)
 {
     new iCountdownTimeFloor = RoundToFloor(g_fCountdownTime);
     if(IsClientInGame(iClient))
-        PrintCenterText(iClient, "\n  The round will start in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+        PrintCenterText(iClient, "\n  %t", "Start Countdown", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
 }
 
 public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
@@ -641,7 +641,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient)) {
                 new iTimeDelta = iCountdownTimeFloor - g_iCountdownCount;
-                PrintCenterText(iClient, "\n  The round will start in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+                PrintCenterText(iClient, "\n  %t", "Start Countdown", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
             }
         }
         return Plugin_Continue;
@@ -651,7 +651,7 @@ public Action:ShowCountdownMessage(Handle:hTimer, any:iTarget)
         g_iInitialTerroristsCount = GetTeamClientCount(CS_TEAM_T);
         for(new iClient = 1; iClient < MaxClients; iClient++) {
             if(IsClientInGame(iClient))
-                PrintCenterText(iClient, "\n  The round has started.");
+                PrintCenterText(iClient, "\n  %t", "Round Start");
         }
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hShowCountdownMessage = INVALID_HANDLE;
@@ -983,14 +983,14 @@ public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
     if(g_iaRespawnCountdownCount[iClient] < g_fCountdownTime) {
         if(IsClientInGame(iClient)) {
             new iTimeDelta = iCountdownTimeFloor - g_iaRespawnCountdownCount[iClient];
-            PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+            PrintCenterText(iClient, "\n  %t", "Wake Up", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
         }
         return Plugin_Continue;
     }
     else {
         g_iaRespawnCountdownCount[iClient] = 0;
         if(IsClientInGame(iClient))
-            PrintCenterText(iClient, "\n  You are ready to go.");
+            PrintCenterText(iClient, "\n  %t", "Ready To Go");
         //EmitSoundToAll(SOUND_GOGOGO);
         g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
@@ -1038,7 +1038,7 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                 if(g_fCTRespawnSleepDuration) {
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
-                    PrintCenterText(iClient, "\n  You will wake up in %d second%s.", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
+                    PrintCenterText(iClient, "\n  %t", "Wake Up", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
                     if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
                         KillTimer(g_haRespawnFreezeCountdown[iClient]);
                         g_iaRespawnCountdownCount[iClient] = 0;
@@ -1258,7 +1258,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
                     if(!g_bRespawnMode)
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
-							"Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
+                            "Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
                     else {
                         g_baAvailableToSwap[iVictim] = false;
                         g_baAvailableToSwap[iAttacker] = false;
@@ -1516,7 +1516,7 @@ stock GiveGrenades(iClient)
             if(iaReceived[i]) {
                 if(bAtLeastTwo && i != iFirstType) {
                     if(i == iLastType)
-						Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s %T ", sGrenadeMessage, "And", iClient);
+                        Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s %T ", sGrenadeMessage, "And", iClient);
                     else
                         StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), ", ");
                 }
@@ -1525,13 +1525,13 @@ stock GiveGrenades(iClient)
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), sNumberTemp);
                 StrCat(sGrenadeMessage, sizeof(sGrenadeMessage), " ");
                 if(i == NADE_DECOY && g_bFrostNades)
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "FrostNade", iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "FrostNade", iClient);
                 else
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, g_saGrenadeChatNames[i], iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, g_saGrenadeChatNames[i], iClient);
                 if(iaReceived[i] > 1)
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Plural", iClient);
-				else
-					Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Plural", iClient);
+                else
+                    Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
             }
         }
         PrintToChat(iClient, "  \x04[HNS] %t", "Grenades Received", sGrenadeMessage);

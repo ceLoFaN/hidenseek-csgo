@@ -99,6 +99,8 @@
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
 
+#define HIDE_RADAR_CSGO 1<<12
+
 public Plugin:myinfo =
 {
     name = "HideNSeek",
@@ -200,6 +202,7 @@ new g_iHaloSprite;
 
 //Pluginstart vars
 new Float:g_fGrenadeSpeedMultiplier;
+new String:g_sGameDirName[10];
 
 //Realtime vars
   //frostnades
@@ -380,6 +383,11 @@ public OnPluginStart()
     ServerCommand("mp_backup_round_file_last \"\"");
     ServerCommand("mp_backup_round_file_pattern \"\"");
     ServerCommand("mp_backup_round_auto 0");
+    
+    // Radar hide. Get game folder name and do hook for css if it needed.
+    GetGameFolderName(g_sGameDirName, 10);
+    if(StrContains(g_sGameDirName, "cstrike") != -1)
+        HookEvent("player_blind", OnPlayerFlash_Post);
 }
 
 public OnConfigsExecuted()
@@ -973,7 +981,6 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     g_baDiedBecauseRespawning[iClient] = false;
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
-        
     return Plugin_Continue;
 }
 
@@ -1797,5 +1804,26 @@ DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeap
             DispatchKeyValue(iVictim, "targetname", "war3_donthurtme");
             RemoveEdict(iPointHurt);
         }
+    }
+}
+
+public Action:RemoveRadar(Handle:hTimer, any:iClient)
+{
+    if(StrContains(g_sGameDirName, "csgo") != -1)
+        SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
+    else
+        if(StrContains(g_sGameDirName, "cstrike") != -1) {
+            SetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration", 3600.0);
+            SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+        }
+}
+
+public OnPlayerFlash_Post(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+    new iId = GetEventInt(hEvent, "userid");
+    new iClient = GetClientOfUserId(iId);
+    if(iClient && GetClientTeam(iClient) > CS_TEAM_SPECTATOR) {
+        new Float:fDuration = GetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration");
+        CreateTimer(fDuration, RemoveRadar, iClient);
     }
 }

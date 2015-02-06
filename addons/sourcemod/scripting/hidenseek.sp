@@ -54,6 +54,7 @@
 #define BLOCK_CONSOLE_KILL            "1"
 #define SUICIDE_POINTS_PENALTY        "3"
 #define MOLOTOV_FRIENDLY_FIRE         "0"
+#define HIDE_RADAR                    "1"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -98,6 +99,8 @@
 #define SOUND_UNFREEZE             "physics/glass/glass_impact_bullet4.wav"
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
+
+#define HIDE_RADAR_CSGO 1<<12
 
 public Plugin:myinfo =
 {
@@ -144,6 +147,7 @@ new Handle:g_hBaseRespawnTime = INVALID_HANDLE;
 new Handle:g_hInvisibilityDuration = INVALID_HANDLE;
 new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
+new Handle:g_hHideRadar = INVALID_HANDLE;
 
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
@@ -173,6 +177,7 @@ new Float:g_fBaseRespawnTime;
 new Float:g_fInvisibilityDuration;
 new Float:g_fCTRespawnSleepDuration;
 new Float:g_fInvisibilityBreakDistance;
+new bool:g_bHideRadar;
 
 //RespawnMode vars
 new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -200,6 +205,7 @@ new g_iHaloSprite;
 
 //Pluginstart vars
 new Float:g_fGrenadeSpeedMultiplier;
+new String:g_sGameDirName[10];
 
 //Realtime vars
   //frostnades
@@ -310,6 +316,7 @@ public OnPluginStart()
     g_hInvisibilityDuration = CreateConVar("hns_respawn_invisibility_duration", INVISIBILITY_DURATION, "The time in seconds Ts get invisibility after respawning.", _, true, 0.0);
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
+    g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -356,6 +363,7 @@ public OnPluginStart()
     HookConVarChange(g_hInvisibilityDuration, OnCvarChange);
     HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
     HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
+    HookConVarChange(g_hHideRadar, OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -380,6 +388,11 @@ public OnPluginStart()
     ServerCommand("mp_backup_round_file_last \"\"");
     ServerCommand("mp_backup_round_file_pattern \"\"");
     ServerCommand("mp_backup_round_auto 0");
+    
+    // Radar hide. Get game folder name and do hook for css if it needed.
+    GetGameFolderName(g_sGameDirName, 10);
+    if(StrContains(g_sGameDirName, "cstrike") != -1)
+        HookEvent("player_blind", OnPlayerFlash_Post);
 }
 
 public OnConfigsExecuted()
@@ -405,6 +418,7 @@ public OnConfigsExecuted()
     g_fInvisibilityDuration = GetConVarFloat(g_hInvisibilityDuration);
     g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
     g_fCTRespawnSleepDuration = GetConVarFloat(g_hCTRespawnSleepDuration);
+    g_bHideRadar = GetConVarBool(g_hHideRadar);
     
     g_faGrenadeChance[NADE_FLASHBANG] = GetConVarFloat(g_hFlashbangChance);
     g_faGrenadeChance[NADE_MOLOTOV] = GetConVarFloat(g_hMolotovChance);
@@ -508,6 +522,8 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
         g_fInvisibilityBreakDistance = GetConVarFloat(hConVar) + 64.0; else
     if(StrEqual("hns_ct_respawn_sleep_duration", sConVarName))
         g_fCTRespawnSleepDuration = GetConVarFloat(hConVar); else
+    if (StrEqual("hns_hide_radar", sConVarName))
+        g_bHideRadar = GetConVarBool(hConVar); else
     if(StrEqual("hns_airaccelerate", sConVarName)) {
         g_iAirAccelerate = StringToInt(sNewValue);
         if(g_iAirAccelerate) {
@@ -973,7 +989,9 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     g_baDiedBecauseRespawning[iClient] = false;
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
-        
+    
+    CreateTimer(0.0, RemoveRadar, iClient);
+    
     return Plugin_Continue;
 }
 
@@ -1797,5 +1815,28 @@ DealDamage(iVictim, iDamage, iAttacker = 0, iDmgType = DMG_GENERIC, String:sWeap
             DispatchKeyValue(iVictim, "targetname", "war3_donthurtme");
             RemoveEdict(iPointHurt);
         }
+    }
+}
+
+public Action:RemoveRadar(Handle:hTimer, any:iClient)
+{
+    if (!g_bHideRadar)
+        return;
+    if(StrContains(g_sGameDirName, "csgo") != -1)
+        SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
+    else
+        if(StrContains(g_sGameDirName, "cstrike") != -1) {
+            SetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration", 3600.0);
+            SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+        }
+}
+
+public OnPlayerFlash_Post(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+    new iId = GetEventInt(hEvent, "userid");
+    new iClient = GetClientOfUserId(iId);
+    if(iClient && GetClientTeam(iClient) > CS_TEAM_SPECTATOR) {
+        new Float:fDuration = GetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration");
+        CreateTimer(fDuration, RemoveRadar, iClient);
     }
 }

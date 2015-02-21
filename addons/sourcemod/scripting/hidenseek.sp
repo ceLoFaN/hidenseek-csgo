@@ -1103,7 +1103,7 @@ public Action:Command_Spectate(iClient, const String:sCommand[], iArgCount)
     new iTeam = GetClientTeam(iClient);
     if(iTeam == CS_TEAM_CT || CS_TEAM_T) {
         if(IsPlayerAlive(iClient)) {
-            PrintToConsole(iClient, "  \x04[HNS] You are not allowed to go spectating while you're alive.");
+            PrintToConsole(iClient, "  \x04[HNS] %t", "Spectate Deny Alive");
             return Plugin_Stop;
         }
         else {

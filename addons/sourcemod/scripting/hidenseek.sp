@@ -377,6 +377,7 @@ public OnPluginStart()
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
+    AddCommandListener(Command_Spectate, "spectate");
 
     g_fGrenadeSpeedMultiplier = 250.0 / 245.0;
     g_bEnabled = true;
@@ -1090,6 +1091,28 @@ public OnClientPutInServer(iClient)
     SDKHook(iClient, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
     SDKHook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
     SDKHook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
+}
+
+public Action:Command_Spectate(iClient, const String:sCommand[], iArgCount)
+{
+    if(!g_bEnabled)
+        return Plugin_Continue;
+    if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
+        return Plugin_Continue;
+
+    new iTeam = GetClientTeam(iClient);
+    if(iTeam == CS_TEAM_CT || CS_TEAM_T) {
+        if(IsPlayerAlive(iClient)) {
+            PrintToConsole(iClient, "  \x04[HNS] %t", "Spectate Deny Alive");
+            return Plugin_Stop;
+        }
+        else {
+            g_iaInitialTeamTrack[iClient] = iTeam;
+            SilentUnfreeze(iClient);
+            return Plugin_Continue;
+        }
+    }
+    return Plugin_Continue;
 }
 
 public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)

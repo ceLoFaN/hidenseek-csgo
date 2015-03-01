@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.33"
+#define PLUGIN_VERSION                "1.6.37"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -149,7 +149,7 @@ new Handle:g_hInvisibilityDuration = INVALID_HANDLE;
 new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
 new Handle:g_hHideRadar = INVALID_HANDLE;
-new Handle:g_hRespawnRoundDuration = INVALID_HANDLE:
+new Handle:g_hRespawnRoundDuration = INVALID_HANDLE;
 
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
@@ -189,6 +189,9 @@ new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 new bool:g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
 new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
+new g_iRoundDuration = 0;
+new g_iMapTimelimit = 0;
+new g_iMapRounds = 0;
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -402,7 +405,7 @@ public OnPluginStart()
 
 public OnConfigsExecuted()
 {
-    if(g_bEnabled != GetConVarBool(g_bEnabled))
+    if(g_bEnabled != GetConVarBool(g_hEnabled))
         g_bEnabled = GetConVarBool(g_hEnabled);
     g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
     g_bCountdownFade = GetConVarBool(g_hCountdownFade);
@@ -1107,7 +1110,7 @@ public GameModeSetup() {
         if(!g_iRoundDuration) {
             g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
             if(!g_iRoundDuration)
-                g_iRoundDuration = GetConVarInt(g_hRespawnRoundDuration));
+                g_iRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
         }
         if(!g_iMapRounds) {
             g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));

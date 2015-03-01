@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.8"
+#define PLUGIN_VERSION                "1.6.9"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -376,7 +376,6 @@ public OnPluginStart()
     HookEvent("round_end", OnRoundEnd);
     HookEvent("item_pickup", OnItemPickUp);
     HookEvent("player_death", OnPlayerDeath);
-    HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
 
@@ -1099,6 +1098,8 @@ public Action:RespawnPlayer(Handle:hTimer, any:iClient)
 }
 
 public RespawnModeSetup() {
+    SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
+    SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
     SetConVarInt(FindConVar("mp_maxrounds"), 1);
     SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
     SetRoundTime(g_iRespawnRoundDuration, true);
@@ -1398,20 +1399,6 @@ public TrySwapPlayers(iClient)
                     }
             }
     }
-}
-
-public Action:OnPlayerDeath_Pre(Handle:hEvent, const String:sName[], bool:bDontBroadcast) {
-    if(!g_bEnabled)
-        return Plugin_Continue;
-    new iVictim = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    if(iVictim > 0 && iVictim <= MaxClients) {
-        if(g_bRespawnMode) {
-            for(new i = 0; i < 2; i++)
-                RemoveWeaponBySlot(iVictim, i);
-            RemoveNades(iVictim);
-        }
-    }
-    return Plugin_Continue;
 }
 
 public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroadcast)

@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.37"
+#define PLUGIN_VERSION                "1.6.50"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -100,6 +100,10 @@
 #define SOUND_UNFREEZE             "physics/glass/glass_impact_bullet4.wav"
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
+
+// Bots Defines
+#define BOT_T    0
+#define BOT_CT   1
 
 #define HIDE_RADAR_CSGO 1<<12
 
@@ -192,6 +196,7 @@ new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
+new g_iaBots[2] = {-1, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -989,6 +994,32 @@ public Action:OnWeaponCanUse(iClient, iWeapon)
     else if(GetClientTeam(iClient) == CS_TEAM_CT && IsWeaponGrenade(sWeaponName))
         return Plugin_Handled;
     return Plugin_Continue;
+}
+
+public bool:AddTeamBot(iTeam)
+{
+    if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
+        iID = iTeam - 2;
+        if(g_iaBots[iID] == -1) {
+            g_iaBots[iID] = CreateFakeClient(" ");
+            CS_SwitchTeam(g_iaBots[iID], iTeam);
+            CS_RespawnPlayer(g_iaBots[iID]);
+            return true;
+        }
+    }
+    return false;
+}
+
+public bool:RemoveTeamBot(iTeam) 
+{
+    if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
+        iID = iTeam - 2;
+        if(g_iaBots[iID] > 0) {
+            KickClient(g_iaBots[iID], "Get outta here!");
+            return true;
+        }
+    }
+    return false;
 }
 
 public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroadcast)

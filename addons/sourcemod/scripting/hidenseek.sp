@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.50"
+#define PLUGIN_VERSION                "1.6.59"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -226,6 +226,7 @@ new bool:g_baFrozen[MAXPLAYERS + 1] = {false, ...};
   //game
 new bool:g_baToggleKnife[MAXPLAYERS + 1] = {true, ...};
 new g_iaInitialTeamTrack[MAXPLAYERS + 1] = {0, ...};
+new g_iaAlivePlayers[2] = {0, ...};
 new g_iTerroristsDeathCount;
 
 //Grenade consts
@@ -582,6 +583,7 @@ public OnMapStart()
     PrecacheSound(SOUND_GOGOGO);
     
     g_fCountdownOverTime = 0.0;
+    g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
     
     if(g_bEnabled) {
         SetConVarInt(FindConVar("mp_autoteambalance"), 1);    // Not enforced
@@ -968,6 +970,13 @@ public OnClientDisconnect(iClient)
     SDKUnhook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
     SDKUnhook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
+
+    iTeam = GetClientTeam(iClient);
+    if(IsPlayerAlive(iClient)) {
+        g_iaAlivePlayers[iTeam - 2]--;
+        if(g_iaAlivePlayers[iTeam - 2] < 2)
+            AddBot(iTeam);
+    }
     if(g_baFrozen[iClient]) {
         if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
             KillTimer(g_haFreezeTimer[iClient])
@@ -1016,6 +1025,7 @@ public bool:RemoveTeamBot(iTeam)
         iID = iTeam - 2;
         if(g_iaBots[iID] > 0) {
             KickClient(g_iaBots[iID], "Get outta here!");
+            g_iaBots[iID] = -1;
             return true;
         }
     }
@@ -1028,13 +1038,16 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
         return Plugin_Continue;
     new iId = GetEventInt(hEvent, "userid");
     new iClient = GetClientOfUserId(iId);
+    new iTeam = GetClientTeam(iClient);
 
     if(g_bRespawnMode) {
-        new iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
 
+    g_iaAlivePlayers[iTeam - 2]++;
+    if(g_iaAlivePlayers[iTeam - 2] > 1)
+        RemoveBot(iTeam);
     g_baAvailableToSwap[iClient] = false;
     g_baDiedBecauseRespawning[iClient] = false;
 
@@ -1370,7 +1383,11 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
 
     if(iVictim > 0 && iVictim <= MaxClients) {
-        if(GetClientTeam(iVictim) == CS_TEAM_T) {
+        iTeam = GetClientTeam(iVictim);
+        g_iaAlivePlayers[iTeam - 2]--;
+        if(g_iaAlivePlayers[iTeam - 2] < 2)
+            AddBot(iTeam);
+        if(iTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {
                 if(GetClientTeam(iAttacker) == CS_TEAM_CT) {

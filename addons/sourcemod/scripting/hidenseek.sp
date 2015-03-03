@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.59"
+#define PLUGIN_VERSION                "1.6.69"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -100,10 +100,6 @@
 #define SOUND_UNFREEZE             "physics/glass/glass_impact_bullet4.wav"
 #define SOUND_FROSTNADE_EXPLODE    "ui/freeze_cam.wav"
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
-
-// Bots Defines
-#define BOT_T    0
-#define BOT_CT   1
 
 #define HIDE_RADAR_CSGO 1<<12
 
@@ -196,7 +192,6 @@ new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
-new g_iaBots[2] = {-1, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -971,12 +966,6 @@ public OnClientDisconnect(iClient)
     SDKUnhook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
 
-    iTeam = GetClientTeam(iClient);
-    if(IsPlayerAlive(iClient)) {
-        g_iaAlivePlayers[iTeam - 2]--;
-        if(g_iaAlivePlayers[iTeam - 2] < 2)
-            AddBot(iTeam);
-    }
     if(g_baFrozen[iClient]) {
         if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
             KillTimer(g_haFreezeTimer[iClient])
@@ -1005,33 +994,6 @@ public Action:OnWeaponCanUse(iClient, iWeapon)
     return Plugin_Continue;
 }
 
-public bool:AddTeamBot(iTeam)
-{
-    if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
-        iID = iTeam - 2;
-        if(g_iaBots[iID] == -1) {
-            g_iaBots[iID] = CreateFakeClient(" ");
-            CS_SwitchTeam(g_iaBots[iID], iTeam);
-            CS_RespawnPlayer(g_iaBots[iID]);
-            return true;
-        }
-    }
-    return false;
-}
-
-public bool:RemoveTeamBot(iTeam) 
-{
-    if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
-        iID = iTeam - 2;
-        if(g_iaBots[iID] > 0) {
-            KickClient(g_iaBots[iID], "Get outta here!");
-            g_iaBots[iID] = -1;
-            return true;
-        }
-    }
-    return false;
-}
-
 public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 {
     if(!g_bEnabled)
@@ -1045,9 +1007,6 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
 
-    g_iaAlivePlayers[iTeam - 2]++;
-    if(g_iaAlivePlayers[iTeam - 2] > 1)
-        RemoveBot(iTeam);
     g_baAvailableToSwap[iClient] = false;
     g_baDiedBecauseRespawning[iClient] = false;
 
@@ -1166,11 +1125,13 @@ public GameModeSetup() {
         SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
         SetConVarInt(FindConVar("mp_maxrounds"), 1);
         SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
         SetRoundTime(g_iRespawnRoundDuration, true);
     }
     else {
         SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
         SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
         if(g_iMapRounds)
             SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
         if(g_iMapTimelimit)
@@ -1384,9 +1345,6 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
 
     if(iVictim > 0 && iVictim <= MaxClients) {
         iTeam = GetClientTeam(iVictim);
-        g_iaAlivePlayers[iTeam - 2]--;
-        if(g_iaAlivePlayers[iTeam - 2] < 2)
-            AddBot(iTeam);
         if(iTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {

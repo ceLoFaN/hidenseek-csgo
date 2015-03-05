@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.0"
+#define PLUGIN_VERSION                "1.6.69"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -55,6 +55,7 @@
 #define SUICIDE_POINTS_PENALTY        "3"
 #define MOLOTOV_FRIENDLY_FIRE         "0"
 #define HIDE_RADAR                    "1"
+#define RESPAWN_ROUND_DURATION        "25"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -148,6 +149,7 @@ new Handle:g_hInvisibilityDuration = INVALID_HANDLE;
 new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
 new Handle:g_hHideRadar = INVALID_HANDLE;
+new Handle:g_hRespawnRoundDuration = INVALID_HANDLE;
 
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
@@ -178,6 +180,7 @@ new Float:g_fInvisibilityDuration;
 new Float:g_fCTRespawnSleepDuration;
 new Float:g_fInvisibilityBreakDistance;
 new bool:g_bHideRadar;
+new g_iRespawnRoundDuration;
 
 //RespawnMode vars
 new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -186,6 +189,9 @@ new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 new bool:g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
 new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
+new g_iRoundDuration = 0;
+new g_iMapTimelimit = 0;
+new g_iMapRounds = 0;
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -215,6 +221,7 @@ new bool:g_baFrozen[MAXPLAYERS + 1] = {false, ...};
   //game
 new bool:g_baToggleKnife[MAXPLAYERS + 1] = {true, ...};
 new g_iaInitialTeamTrack[MAXPLAYERS + 1] = {0, ...};
+new g_iaAlivePlayers[2] = {0, ...};
 new g_iTerroristsDeathCount;
 
 //Grenade consts
@@ -317,6 +324,7 @@ public OnPluginStart()
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
     g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hRespawnRoundDuration = CreateConVar("hns_respawn_round_duration", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -364,6 +372,7 @@ public OnPluginStart()
     HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
     HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
     HookConVarChange(g_hHideRadar, OnCvarChange);
+    HookConVarChange(g_hRespawnRoundDuration, OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -371,7 +380,6 @@ public OnPluginStart()
     HookEvent("round_end", OnRoundEnd);
     HookEvent("item_pickup", OnItemPickUp);
     HookEvent("player_death", OnPlayerDeath);
-    HookEvent("player_death", OnPlayerDeath_Pre, EventHookMode_Pre);
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
 
@@ -398,7 +406,8 @@ public OnPluginStart()
 
 public OnConfigsExecuted()
 {
-    g_bEnabled = GetConVarBool(g_hEnabled);
+    if(g_bEnabled != GetConVarBool(g_hEnabled))
+        g_bEnabled = GetConVarBool(g_hEnabled);
     g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
     g_bCountdownFade = GetConVarBool(g_hCountdownFade);
     g_iAirAccelerate = GetConVarInt(g_hAirAccelerate);
@@ -413,13 +422,15 @@ public OnConfigsExecuted()
     g_iRoundPoints = GetConVarInt(g_hRoundPoints);
     g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
     g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak);
+    if(g_bRespawnMode != GetConVarBool(g_hRespawnMode))
+        GameModeSetup();
     g_bRespawnMode = GetConVarBool(g_hRespawnMode);
-    SetConVarInt(FindConVar("mp_randomspawn"), g_bRespawnMode);
     g_fBaseRespawnTime = GetConVarFloat(g_hBaseRespawnTime);
     g_fInvisibilityDuration = GetConVarFloat(g_hInvisibilityDuration);
     g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
     g_fCTRespawnSleepDuration = GetConVarFloat(g_hCTRespawnSleepDuration);
     g_bHideRadar = GetConVarBool(g_hHideRadar);
+    g_iRespawnRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
     
     g_faGrenadeChance[NADE_FLASHBANG] = GetConVarFloat(g_hFlashbangChance);
     g_faGrenadeChance[NADE_MOLOTOV] = GetConVarFloat(g_hMolotovChance);
@@ -453,8 +464,12 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
     decl String:sConVarName[64];
     GetConVarName(hConVar, sConVarName, sizeof(sConVarName));
 
-    if(StrEqual("hns_enabled", sConVarName))
-        g_bEnabled = GetConVarBool(hConVar); else
+    if(StrEqual("hns_enabled", sConVarName)) {
+        if(g_bEnabled != GetConVarBool(hConVar)) {
+            g_bEnabled = GetConVarBool(hConVar);
+            GameModeSetup();
+        }
+    } else
     if(StrEqual("hns_countdown_time", sConVarName))
         g_fCountdownTime = StringToFloat(sNewValue); else
     if(StrEqual("hns_countdown_fade", sConVarName))
@@ -512,8 +527,10 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
     if(StrEqual("hns_molotov_friendly_fire", sConVarName))
         g_bMolotovFriendlyFire = GetConVarBool(hConVar); else
     if(StrEqual("hns_respawn_mode", sConVarName)) {
-        g_bRespawnMode = GetConVarBool(hConVar);
-        SetConVarInt(FindConVar("mp_randomspawn"), g_bRespawnMode);
+        if(g_bRespawnMode != GetConVarBool(hConVar)) {
+            g_bRespawnMode = GetConVarBool(hConVar);
+            GameModeSetup();
+        }
     } else
     if(StrEqual("hns_base_respawn_time", sConVarName))
         g_fBaseRespawnTime = GetConVarFloat(hConVar); else
@@ -525,6 +542,8 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
         g_fCTRespawnSleepDuration = GetConVarFloat(hConVar); else
     if (StrEqual("hns_hide_radar", sConVarName))
         g_bHideRadar = GetConVarBool(hConVar); else
+    if (StrEqual("hns_respawn_round_duration", sConVarName))
+        g_iRespawnRoundDuration = GetConVarInt(hConVar); else        
     if(StrEqual("hns_airaccelerate", sConVarName)) {
         g_iAirAccelerate = StringToInt(sNewValue);
         if(g_iAirAccelerate) {
@@ -559,6 +578,7 @@ public OnMapStart()
     PrecacheSound(SOUND_GOGOGO);
     
     g_fCountdownOverTime = 0.0;
+    g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
     
     if(g_bEnabled) {
         SetConVarInt(FindConVar("mp_autoteambalance"), 1);    // Not enforced
@@ -945,6 +965,7 @@ public OnClientDisconnect(iClient)
     SDKUnhook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
     SDKUnhook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
+
     if(g_baFrozen[iClient]) {
         if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
             KillTimer(g_haFreezeTimer[iClient])
@@ -979,9 +1000,9 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
         return Plugin_Continue;
     new iId = GetEventInt(hEvent, "userid");
     new iClient = GetClientOfUserId(iId);
+    new iTeam = GetClientTeam(iClient);
 
     if(g_bRespawnMode) {
-        new iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
@@ -1084,6 +1105,40 @@ public Action:RespawnPlayer(Handle:hTimer, any:iClient)
             CS_RespawnPlayer(iClient);
     }
     g_haRespawn[iClient] = INVALID_HANDLE;
+}
+
+public GameModeSetup() {
+    SetConVarInt(FindConVar("mp_randomspawn"), g_bEnabled && g_bRespawnMode);
+    if(g_bEnabled && g_bRespawnMode) {
+        if(!g_iRoundDuration) {
+            g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
+            if(!g_iRoundDuration)
+                g_iRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
+        }
+        if(!g_iMapRounds) {
+            g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));
+        }
+        if(!g_iMapTimelimit) {
+            g_iMapTimelimit = GetConVarInt(FindConVar("mp_timelimit"));
+        }
+        SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
+        SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
+        SetConVarInt(FindConVar("mp_maxrounds"), 1);
+        SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        SetRoundTime(g_iRespawnRoundDuration, true);
+    }
+    else {
+        SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
+        SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+        if(g_iMapRounds)
+            SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
+        if(g_iMapTimelimit)
+            SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
+        if(g_iRoundDuration)
+            SetRoundTime(g_iRoundDuration, true);
+    }
 }
 
 public OnClientPutInServer(iClient)
@@ -1289,7 +1344,8 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
 
     if(iVictim > 0 && iVictim <= MaxClients) {
-        if(GetClientTeam(iVictim) == CS_TEAM_T) {
+        iTeam = GetClientTeam(iVictim);
+        if(iTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {
                 if(GetClientTeam(iAttacker) == CS_TEAM_CT) {
@@ -1380,20 +1436,6 @@ public TrySwapPlayers(iClient)
                     }
             }
     }
-}
-
-public Action:OnPlayerDeath_Pre(Handle:hEvent, const String:sName[], bool:bDontBroadcast) {
-    if(!g_bEnabled)
-        return Plugin_Continue;
-    new iVictim = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    if(iVictim > 0 && iVictim <= MaxClients) {
-        if(g_bRespawnMode) {
-            for(new i = 0; i < 2; i++)
-                RemoveWeaponBySlot(iVictim, i);
-            RemoveNades(iVictim);
-        }
-    }
-    return Plugin_Continue;
 }
 
 public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
@@ -1646,6 +1688,15 @@ stock RemoveBombsites()
     new iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "func_bomb_target")) != -1)    //Find bombsites
         AcceptEntityInput(iEntity, "kill");    //Destroy the entity
+}
+
+stock SetRoundTime(iTime, bool:bRestartRound = false)
+{
+    SetConVarInt(FindConVar("mp_roundtime_defuse"), 0);
+    SetConVarInt(FindConVar("mp_roundtime_hostage"), 0);
+    SetConVarInt(FindConVar("mp_roundtime"), iTime);
+    if(bRestartRound)
+        SetConVarInt(FindConVar("mp_restartgame"), 1);
 }
 
 stock bool:IsWeaponKnife(const String:sWeaponName[])

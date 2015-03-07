@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.69"
+#define PLUGIN_VERSION                "1.6.89"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -192,6 +192,7 @@ new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
+new Handle:g_hRoundTimer = INVALID_HANDLE;
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -324,7 +325,7 @@ public OnPluginStart()
     g_hInvisibilityBreakDistance = CreateConVar("hns_invisibility_break_distance", INVISIBILITY_BREAK_DISTANCE, "The max. distance from an invisible player to an enemy required to break the invisibility.", _, true, 0.0);
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
     g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-    g_hRespawnRoundDuration = CreateConVar("hns_respawn_round_duration", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
+    g_hRespawnRoundDuration = CreateConVar("hns_respawn_mode_roundtime", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -406,8 +407,10 @@ public OnPluginStart()
 
 public OnConfigsExecuted()
 {
-    if(g_bEnabled != GetConVarBool(g_hEnabled))
-        g_bEnabled = GetConVarBool(g_hEnabled);
+    g_bEnabled = GetConVarBool(g_hEnabled);
+    g_bRespawnMode = GetConVarBool(g_hRespawnMode);
+    g_iRespawnRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
+    GameModeSetup();
     g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
     g_bCountdownFade = GetConVarBool(g_hCountdownFade);
     g_iAirAccelerate = GetConVarInt(g_hAirAccelerate);
@@ -421,16 +424,12 @@ public OnConfigsExecuted()
     }
     g_iRoundPoints = GetConVarInt(g_hRoundPoints);
     g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
-    g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak);
-    if(g_bRespawnMode != GetConVarBool(g_hRespawnMode))
-        GameModeSetup();
-    g_bRespawnMode = GetConVarBool(g_hRespawnMode);
+    g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak); 
     g_fBaseRespawnTime = GetConVarFloat(g_hBaseRespawnTime);
     g_fInvisibilityDuration = GetConVarFloat(g_hInvisibilityDuration);
     g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
     g_fCTRespawnSleepDuration = GetConVarFloat(g_hCTRespawnSleepDuration);
     g_bHideRadar = GetConVarBool(g_hHideRadar);
-    g_iRespawnRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
     
     g_faGrenadeChance[NADE_FLASHBANG] = GetConVarFloat(g_hFlashbangChance);
     g_faGrenadeChance[NADE_MOLOTOV] = GetConVarFloat(g_hMolotovChance);
@@ -542,7 +541,7 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
         g_fCTRespawnSleepDuration = GetConVarFloat(hConVar); else
     if (StrEqual("hns_hide_radar", sConVarName))
         g_bHideRadar = GetConVarBool(hConVar); else
-    if (StrEqual("hns_respawn_round_duration", sConVarName))
+    if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
         g_iRespawnRoundDuration = GetConVarInt(hConVar); else        
     if(StrEqual("hns_airaccelerate", sConVarName)) {
         g_iAirAccelerate = StringToInt(sNewValue);
@@ -593,6 +592,23 @@ public OnMapStart()
     CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 }
 
+public OnMapTimeLeftChanged()
+{
+    if(g_hRoundTimer != INVALID_HANDLE) {
+        KillTimer(g_hRoundTimer);
+        g_hRoundTimer = INVALID_HANDLE;
+    }
+
+    new iRoundTime = GameRules_GetProp("m_iRoundTime");
+    g_hRoundTimer = CreateTimer(float(iRoundTime - 1), EnableRoundObjectives);
+}
+
+public Action:EnableRoundObjectives(Handle:hTimer)
+{
+    SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+    g_hRoundTimer = INVALID_HANDLE;
+}
+
 public Action:RespawnDeadPlayers(Handle:hTimer) 
 {
     if(g_bRespawnMode)
@@ -622,6 +638,13 @@ public OnMapEnd()
             KillTimer(g_haRespawn[iClient]);
             g_haRespawn[iClient] = INVALID_HANDLE;
         }
+    }
+    if(g_hRoundTimer != INVALID_HANDLE) {
+        KillTimer(g_hRoundTimer);
+        g_hRoundTimer = INVALID_HANDLE;
+    }
+    if(g_bRespawnMode) {
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
     }
 }
 
@@ -1138,6 +1161,10 @@ public GameModeSetup() {
             SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
+        if(g_hRoundTimer != INVALID_HANDLE) {
+            KillTimer(g_hRoundTimer);
+            g_hRoundTimer = INVALID_HANDLE;
+        }
     }
 }
 
@@ -1344,7 +1371,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
 
     if(iVictim > 0 && iVictim <= MaxClients) {
-        iTeam = GetClientTeam(iVictim);
+        new iTeam = GetClientTeam(iVictim);
         if(iTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {

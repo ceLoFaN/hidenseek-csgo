@@ -22,7 +22,7 @@
 #include <cstrike>
 
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.89"
+#define PLUGIN_VERSION                "1.6.94"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -665,9 +665,12 @@ public Action:OnRoundStart(Handle:hEvent, const String:sName[], bool:dontBroadca
     RemoveHostages();
     
     if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0) {
-        if(g_hStartCountdown != INVALID_HANDLE)
+        if(g_hStartCountdown != INVALID_HANDLE) {
             KillTimer(g_hStartCountdown);
-        g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
+            g_hStartCountdown = INVALID_HANDLE;
+        }
+        if(!g_bRespawnMode)
+            g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
     }
     return Plugin_Continue;
 }
@@ -1043,7 +1046,7 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
 public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
     g_iaRespawnCountdownCount[iClient]++;
-    if(g_iaRespawnCountdownCount[iClient] < g_fCountdownTime) {
+    if(g_iaRespawnCountdownCount[iClient] < iCountdownTimeFloor) {
         if(IsClientInGame(iClient)) {
             new iTimeDelta = iCountdownTimeFloor - g_iaRespawnCountdownCount[iClient];
             PrintCenterText(iClient, "\n  %t", "Wake Up", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
@@ -1822,7 +1825,7 @@ public Action:UnfreezeCountdown(Handle:hTimer, any:iClient)
         SetEntityMoveType(iClient, MOVETYPE_WALK);
         g_baFrozen[iClient] = false;
         g_haFreezeTimer[iClient] = INVALID_HANDLE;
-        if(IsPlayerAlive(iClient))
+        if(IsPlayerAlive(iClient) && !g_bRespawnMode)
             PrintToChat(iClient, "  \x04[HNS] %t", "Round Start");
     }
     return Plugin_Continue;

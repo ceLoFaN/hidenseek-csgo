@@ -1961,9 +1961,5 @@ public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 
 public WriteWelcomeMessage(iClient)
 {
-    new Handle:hJumpTop = FindPluginByFile("jumptop.smx");
-    if(hJumpTop == INVALID_HANDLE)
-        PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode", g_iAirAccelerate);
-    else
-        PrintToChat(iClient, "  \x04[HNS] %t %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode", g_iAirAccelerate, "Jumptop");
+    PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
 }

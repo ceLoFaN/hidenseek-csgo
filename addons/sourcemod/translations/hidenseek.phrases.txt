@@ -283,27 +283,21 @@
 	
 	"Welcome Msg"
 	{
-		"#format"		"{1:t},{2:d}"
-		"en"			"Server is running in {1} mode with {2}aa."
-		"ru"			"Сервер работает в {1} режиме с настройкой {2}aa."
+		"#format"		"{1:t}"
+		"en"			"Welcome! This server is running Hide'N'Seek in {1} mode."
+		"ru"			"Добро пожаловать! На сервере запущен Hide'N'Seek в {1} режиме."
 	}
 	
 	"Normal Mode"
 	{
-		"en"			"Normal"
+		"en"			"normal"
 		"ru"			"обычном"
 	}
 	
 	"Respawn Mode"
 	{
-		"en"			"Respawn"
+		"en"			"respawn"
 		"ru"			"возрождающем"
-	}
-	
-	"Jumptop"
-	{
-		"en"			"Type /jt for Top. Type /rec for records."
-		"ru"			"Используйте чат-команду /jt для просмотра таблицы лидеров, а /rec для просмотра собственных рекордов."
 	}
 	
 	//Center and Hint phrases

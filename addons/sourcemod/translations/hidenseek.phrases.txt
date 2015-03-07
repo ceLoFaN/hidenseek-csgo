@@ -281,6 +281,31 @@
 		"ru"			"ые(ие)"
 	}
 	
+	"Welcome Msg"
+	{
+		"#format"		"{1:t},{2:d}"
+		"en"			"Server is running in {1} mode with {2}aa."
+		"ru"			"Сервер работает в {1} режиме с настройкой {2}aa."
+	}
+	
+	"Normal Mode"
+	{
+		"en"			"Normal"
+		"ru"			"обычном"
+	}
+	
+	"Respawn Mode"
+	{
+		"en"			"Respawn"
+		"ru"			"возрождающем"
+	}
+	
+	"Jumptop"
+	{
+		"en"			"Type /jt for Top. Type /rec for records."
+		"ru"			"Используйте чат-команду /jt для просмотра таблицы лидеров, а /rec для просмотра собственных рекордов."
+	}
+	
 	//Center and Hint phrases
 	
 	"Start Countdown"

@@ -224,6 +224,7 @@ new bool:g_baToggleKnife[MAXPLAYERS + 1] = {true, ...};
 new g_iaInitialTeamTrack[MAXPLAYERS + 1] = {0, ...};
 new g_iaAlivePlayers[2] = {0, ...};
 new g_iTerroristsDeathCount;
+new bool:g_baWelcomeMsgShown[MAXPLAYERS + 1] = {false, ...};
 
 //Grenade consts
 new const String:g_saGrenadeWeaponNames[][] = {        
@@ -383,6 +384,7 @@ public OnPluginStart()
     HookEvent("player_death", OnPlayerDeath);
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
+    HookEvent("player_team", OnPlayerTeam);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
@@ -1176,6 +1178,8 @@ public OnClientPutInServer(iClient)
     SDKHook(iClient, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
     SDKHook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
     SDKHook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
+    
+    g_baWelcomeMsgShown[iClient] = false;
 }
 
 public Action:Command_Spectate(iClient, const String:sCommand[], iArgCount)
@@ -1943,4 +1947,23 @@ public OnPlayerFlash_Post(Handle:hEvent, const String:sName[], bool:bDontBroadca
         new Float:fDuration = GetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration");
         CreateTimer(fDuration, RemoveRadar, iClient);
     }
+}
+
+public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+    new iId = GetEventInt(hEvent, "userid");
+    new iClient = GetClientOfUserId(iId);
+    if(!g_baWelcomeMsgShown[iClient]) {
+        g_baWelcomeMsgShown[iClient] = true;
+        WriteWelcomeMessage(iClient);
+    }
+}
+
+public WriteWelcomeMessage(iClient)
+{
+    new Handle:hJumpTop = FindPluginByFile("jumptop.smx");
+    if(hJumpTop == INVALID_HANDLE)
+        PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode", g_iAirAccelerate);
+    else
+        PrintToChat(iClient, "  \x04[HNS] %t %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode", g_iAirAccelerate, "Jumptop");
 }

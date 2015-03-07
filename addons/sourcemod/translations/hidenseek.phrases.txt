@@ -281,6 +281,25 @@
 		"ru"			"ые(ие)"
 	}
 	
+	"Welcome Msg"
+	{
+		"#format"		"{1:t}"
+		"en"			"Welcome! This server is running Hide'N'Seek in {1} mode."
+		"ru"			"Добро пожаловать! На сервере запущен Hide'N'Seek в {1} режиме."
+	}
+	
+	"Normal Mode"
+	{
+		"en"			"normal"
+		"ru"			"обычном"
+	}
+	
+	"Respawn Mode"
+	{
+		"en"			"respawn"
+		"ru"			"возрождающем"
+	}
+	
 	//Center and Hint phrases
 	
 	"Start Countdown"

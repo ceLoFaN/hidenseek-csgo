@@ -116,14 +116,14 @@
 	"Killing Notify Attacker"
 	{
 		"#format"		"{1:s},{2:d},{3:s}"
-		"en"			"You killed {1} for {2} point{3} and you have swapped teams with him."
+		"en"			"You killed {1} for {2} point{3} and you have swapped teams."
 		"ru"			"Вы убиты {1} получив {2} оч. Вас поменяют командами."
 	}
 	
 	"Killing Notify Victim"
 	{
 		"#format"		"{1:s}"
-		"en"			"You were killed by {1} and have swapped teams with him."
+		"en"			"You were killed by {1} and have swapped teams."
 		"ru"			"Вы убиты {1}. Вас поменяют командами."
 	}
 	

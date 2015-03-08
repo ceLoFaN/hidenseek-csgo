@@ -21,7 +21,9 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.109"
+#include "hidenseek/spawns.sp"
+
+#define PLUGIN_VERSION                "1.6.110"
 #define AUTHOR                        "ceLoFaN"
 
 // ConVar Defines

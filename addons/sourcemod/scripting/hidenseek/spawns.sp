@@ -25,7 +25,7 @@ public ResetMapRandomSpawnPoints()
 public TrackRandomSpawnEntity(iEntity)
 {
 	if(g_iRandomSpawns >= 64)
-		return Plugin_Handled;
+		return -1;
 
 	g_iaRandomSpawnEntities[g_iRandomSpawns] = iEntity;
 	g_iRandomSpawns++;

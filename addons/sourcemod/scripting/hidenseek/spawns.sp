@@ -1,7 +1,8 @@
 g_iaRandomSpawnEntities[64] = {0, ...};
 g_iRandomSpawns = 0;
+g_fDistanceBetweenSpawns = 600.0;
 
-public GetMapRandomSpawnPoints()
+public GetMapRandomSpawnEntities()
 {
     while((iEntity = FindEntityByClassname(iEntity, "info_deathmatch_spawn")) != -1) {
     	if(g_iRandomSpawns >= 64)
@@ -42,4 +43,16 @@ public CreateRandomSpawnEntity(faOrigin[3])
 	}
 
 	return iRandomSpawnEntity;
+}
+
+public bool:IsRandomSpawnPointValid(faOrigin[3])
+{
+	for(new i = 0; i < g_iRandomSpawns; i++) {
+		new Float:faCompareOrigin[3];
+		Entity_GetAbsOrigin(g_iaRandomSpawnEntities[i], faCompareOrigin);
+		if(GetVectorDistance(faOrigin, faCompareOrigin) < g_fDistanceBetweenSpawns)
+            return false;
+	}
+
+    return true;
 }

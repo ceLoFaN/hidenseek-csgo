@@ -201,6 +201,8 @@ new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
+new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
+new g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -1044,8 +1046,17 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iTeam = GetClientTeam(iClient);
 
     if(g_bRespawnMode) {
-        if(iTeam == CS_TEAM_T)
+        if(iTeam == CS_TEAM_T) {
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
+        
+            // Respawn Protection
+            g_baRespawnProtection[iClient] = true;
+            if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                KillTimer(g_haRespawnProtectionTimer[iClient]);
+                g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+            }
+            g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME, RemoveRespawnProtection, iClient);
+        }
     }
 
     g_baAvailableToSwap[iClient] = false;
@@ -1978,4 +1989,13 @@ public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 public WriteWelcomeMessage(iClient)
 {
     PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
+}
+
+public Action:RemoveRespawnProtection(Handle:timer, any:iClient) // data = client index
+{
+    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haRespawnProtectionTimer[iClient]);
+        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+    }
+    g_baRespawnProtection[iClient] = false;
 }

@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.136"
+#define PLUGIN_VERSION                "1.6.140"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -30,7 +30,6 @@
 // ConVar Defines
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
-#define AIR_ACC                       "100"
 #define ROUND_POINTS                  "3"
 #define BONUS_POINTS                  "2"
 #define MAXIMUM_WIN_STREAK            "5"
@@ -121,7 +120,6 @@ public Plugin:myinfo =
 new Handle:g_hEnabled = INVALID_HANDLE;
 new Handle:g_hCountdownTime = INVALID_HANDLE;
 new Handle:g_hCountdownFade = INVALID_HANDLE;
-new Handle:g_hAirAccelerate = INVALID_HANDLE;
 new Handle:g_hRoundPoints = INVALID_HANDLE;
 new Handle:g_hBonusPointsMultiplier = INVALID_HANDLE;
 new Handle:g_hMaximumWinStreak = INVALID_HANDLE;
@@ -161,7 +159,6 @@ new Handle:g_hWelcomeMessage = INVALID_HANDLE;
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
 new bool:g_bCountdownFade;
-new g_iAirAccelerate;
 new g_iRoundPoints;
 new g_iBonusPointsMultiplier;
 new g_iMaximumWinStreak;
@@ -255,9 +252,9 @@ new const String:g_saGrenadeChatNames[][] = {
 };
 new const g_iaGrenadeOffsets[] = {15, 17, 16, 14, 18, 17};
 
-//Add your protected ConVars here!
-new const String:g_saProtectedConVars[][] = {
-    "sv_airaccelerate",        // use hns_airaccelerate instead
+//Add your Preset ConVars here!
+new const String:g_saPresetConVars[][] = {
+    "sv_airaccelerate",
     "mp_limitteams",
     "mp_freezetime",
     "sv_alltalk",
@@ -273,8 +270,8 @@ new const String:g_saProtectedConVars[][] = {
     "sv_staminajumpcost",
     "sv_staminalandcost"
 };
-new g_iaForcedValues[] = {
-    120,      // sv_airaccelerate
+new g_iaDefaultValues[] = {
+    100,      // sv_airaccelerate
     1,        // mp_limitteams
     0,        // mp_freezetime
     1,        // sv_alltalk
@@ -290,7 +287,6 @@ new g_iaForcedValues[] = {
     0,        // sv_staminajumpcost
     0,        // sv_staminalandcost
 };
-new Handle:g_haProtectedConvar[sizeof(g_saProtectedConVars)] = {INVALID_HANDLE, ...};
 
 public OnPluginStart()
 {
@@ -302,7 +298,6 @@ public OnPluginStart()
     g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
     g_hCountdownTime = CreateConVar("hns_countdown_time", COUNTDOWN_TIME, "The countdown duration during which CTs are frozen", _, true, 0.0, true, 15.0);
     g_hCountdownFade = CreateConVar("hns_countdown_fade", COUNTDOWN_FADE, "Fades the screen for CTs during countdown (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-    g_hAirAccelerate = CreateConVar("hns_airaccelerate", AIR_ACC, "The value at which sv_airaccelerate is being kept. Set to 0 to use sv_airaccelerate instead.", _, true, 12.0);
     g_hRoundPoints = CreateConVar("hns_round_points", ROUND_POINTS, "Round points for every player in the winning team", _, true, 0.0);
     g_hBonusPointsMultiplier = CreateConVar("hns_bonus_points_multiplier", BONUS_POINTS, "Bonus points for kills (CTs) and for surviving (Ts)", _, true, 1.0, true, 3.0);
     g_hMaximumWinStreak = CreateConVar("hns_maximum_win_streak", MAXIMUM_WIN_STREAK, "The number of consecutive rounds won by T before the teams get swapped (0=DSBL)", _, true, 0.0);
@@ -341,14 +336,11 @@ public OnPluginStart()
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
-    //Enforce some server ConVars
-    for(new i = 0; i < sizeof(g_saProtectedConVars); i++)
+    //Set some server ConVars
+    for(new i = 0; i < sizeof(g_saPresetConVars); i++)
     {
-        g_haProtectedConvar[i] = FindConVar(g_saProtectedConVars[i]);
-        SetConVarInt(g_haProtectedConvar[i], g_iaForcedValues[i], true);
-        HookConVarChange(g_haProtectedConvar[i], OnCvarChange);
+        SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
     }
-    HookConVarChange(g_hAirAccelerate, OnCvarChange);    // hns_airaccelerate -> sv_airaccelerate
     HookConVarChange(g_hEnabled, OnCvarChange);
     HookConVarChange(g_hCountdownTime, OnCvarChange);
     HookConVarChange(g_hCountdownFade, OnCvarChange);
@@ -427,15 +419,7 @@ public OnConfigsExecuted()
     GameModeSetup();
     g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
     g_bCountdownFade = GetConVarBool(g_hCountdownFade);
-    g_iAirAccelerate = GetConVarInt(g_hAirAccelerate);
-    if(g_iAirAccelerate) {
-        for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-            if(StrEqual(g_saProtectedConVars[i], "sv_airaccelerate")) {
-                g_iaForcedValues[i] = g_iAirAccelerate;
-                SetConVarInt(FindConVar("sv_airaccelerate"), g_iAirAccelerate);    //why even try to change
-            }
-        }
-    }
+
     g_iRoundPoints = GetConVarInt(g_hRoundPoints);
     g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
     g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak); 
@@ -559,28 +543,7 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
     if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
         g_iRespawnRoundDuration = GetConVarInt(hConVar); else
     if (StrEqual("hns_welcome_message", sConVarName))
-        g_bWelcomeMessage = GetConVarBool(hConVar); else
-    if(StrEqual("hns_airaccelerate", sConVarName)) {
-        g_iAirAccelerate = StringToInt(sNewValue);
-        if(g_iAirAccelerate) {
-            for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-                if(StrEqual(g_saProtectedConVars[i], "sv_airaccelerate")) {
-                    g_iaForcedValues[i] = g_iAirAccelerate;
-                    SetConVarInt(FindConVar("sv_airaccelerate"), g_iAirAccelerate);    //why even try to change
-                }
-            }
-        }
-    }
-    else {
-        if(!(StrEqual("sv_airaccelerate", sConVarName) && !g_iAirAccelerate)) {
-            for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-                if(StrEqual(g_saProtectedConVars[i], sConVarName) && StringToInt(sNewValue) != g_iaForcedValues[i]) {
-                    SetConVarInt(hConVar, g_iaForcedValues[i]);
-                    PrintToServer("  \x04[HNS] %s is a protected CVAR.", sConVarName);
-                }
-            }
-        }
-    }
+        g_bWelcomeMessage = GetConVarBool(hConVar);
 }
 
 public OnMapStart()
@@ -597,8 +560,7 @@ public OnMapStart()
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
     
     if(g_bEnabled) {
-        SetConVarInt(FindConVar("mp_autoteambalance"), 1);    // Not enforced
-        SetConVarInt(FindConVar("sv_gravity"), 800);        // Not enforced
+        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
     
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;

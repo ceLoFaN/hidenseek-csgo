@@ -679,7 +679,7 @@ public Action:OnRoundStart(Handle:hEvent, const String:sName[], bool:dontBroadca
 
     RemoveHostages();
     
-    if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0) {
+    if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0 && !g_bRespawnMode) {
         if(g_hStartCountdown != INVALID_HANDLE) {
             KillTimer(g_hStartCountdown);
             g_hStartCountdown = INVALID_HANDLE;
@@ -1350,7 +1350,7 @@ public OnWeaponSwitchPost(iClient, iWeapon)
         }
         
         new Float:fCurrentTime = GetGameTime();
-        if(fCurrentTime < g_fCountdownOverTime) {
+        if(fCurrentTime < g_fCountdownOverTime && !g_bRespawnMode) {
             SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", g_fCountdownOverTime);
             SetEntPropFloat(iWeapon, Prop_Send, "m_flNextSecondaryAttack", g_fCountdownOverTime);
         }
@@ -1529,7 +1529,7 @@ public Action:OnPlayerRunCmd(iClient, &iButtons, &iImpulse, Float:faVelocity[3],
                     iButtons &= ~(IN_ATTACK | IN_ATTACK2);    //Block attacks for Ts
                     return Plugin_Changed;
                 }
-                else if(IsWeaponGrenade(sWeaponName) && fCurrentTime < g_fCountdownOverTime) {
+                else if(IsWeaponGrenade(sWeaponName) && fCurrentTime < g_fCountdownOverTime && !g_bRespawnMode) {
                     SetEntPropFloat(iActiveWeapon, Prop_Send, "m_flNextPrimaryAttack", g_fCountdownOverTime);
                     SetEntPropFloat(iActiveWeapon, Prop_Send, "m_flNextSecondaryAttack", g_fCountdownOverTime);
                     iButtons &= ~(IN_ATTACK | IN_ATTACK2);    //Block attacks for Ts

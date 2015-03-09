@@ -68,6 +68,7 @@
 #define INVISIBILITY_BREAK_DISTANCE   "200.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
+#define RESPAWN_PROTECTION_TIME       "5.0"
 
 // Fade Defines
 #define FFADE_IN               0x0001

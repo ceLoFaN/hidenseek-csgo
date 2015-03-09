@@ -21,10 +21,11 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#include "hidenseek/spawns.sp"
-
-#define PLUGIN_VERSION                "1.6.110"
+#define PLUGIN_VERSION                "1.6.135"
 #define AUTHOR                        "ceLoFaN"
+
+#include "hidenseek/players.sp"
+#include "hidenseek/spawns.sp"
 
 // ConVar Defines
 #define HIDENSEEK_ENABLED             "1"
@@ -59,15 +60,14 @@
 #define SUICIDE_POINTS_PENALTY        "3"
 #define MOLOTOV_FRIENDLY_FIRE         "0"
 #define HIDE_RADAR                    "1"
-#define RESPAWN_ROUND_DURATION        "25"
 #define WELCOME_MESSAGE               "1"
-
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
 #define INVISIBILITY_BREAK_DISTANCE   "200.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
+#define RESPAWN_ROUND_DURATION        "25"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -201,6 +201,8 @@ new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
+new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new bool:g_bEnoughRespawnPoints = false;
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -605,6 +607,7 @@ public OnMapStart()
         RemoveBombsites();
     }
     CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    g_bEnoughRespawnPoints = false;
 }
 
 public OnMapTimeLeftChanged()
@@ -652,6 +655,10 @@ public OnMapEnd()
         if(g_haRespawn[iClient] != INVALID_HANDLE) {
             KillTimer(g_haRespawn[iClient]);
             g_haRespawn[iClient] = INVALID_HANDLE;
+        }
+        if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haSpawnGenerateTimer[iClient]);
+            g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
         }
     }
     if(g_hRoundTimer != INVALID_HANDLE) {
@@ -1019,6 +1026,10 @@ public OnClientDisconnect(iClient)
         g_haInvisible[iClient] = INVALID_HANDLE;
         g_iaRespawnCountdownCount[iClient] = 0;
     }
+    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haSpawnGenerateTimer[iClient]);
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+    }
     g_baToggleKnife[iClient] = true;
 }
 
@@ -1054,8 +1065,33 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
     
     CreateTimer(0.0, RemoveRadar, iClient);
+
+    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haSpawnGenerateTimer[iClient]);
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+    }
+    if(!g_bEnoughRespawnPoints)
+        g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
     
     return Plugin_Continue;
+}
+
+public Action:GenerateRandomSpawns(Handle:hTimer, any:iClient) {
+    if(IsPlayerAlive(iClient) && CanPlayerGenerateRandomSpawn(iClient)) {
+        new Float:faCoord[3];
+        GetClientAbsOrigin(iClient, faCoord);
+        if(IsRandomSpawnPointValid(faCoord)) {
+            new iSpawn = CreateRandomSpawnEntity(faCoord);
+            new iSpawnID = TrackRandomSpawnEntity(iSpawn);
+            if(iSpawnID >= 63)
+                g_bEnoughRespawnPoints = true;
+        }
+        return Plugin_Continue;
+    }
+    else {
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+        return Plugin_Stop;
+    }
 }
 
 public Action:RespawnCountdown(Handle:hTimer, any:iClient) {

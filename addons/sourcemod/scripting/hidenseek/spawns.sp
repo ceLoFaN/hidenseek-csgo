@@ -56,3 +56,18 @@ public bool:IsRandomSpawnPointValid(faOrigin[3])
 
     return true;
 }
+
+public bool:CanClientGenerateRandomSpawn(iClient)
+{
+    iFlags = GetEntityFlags(iClient);
+    if(!(iFlags & FL_ONGROUND))
+        return false;
+    if((iFlags & FL_INWATER))
+        return false;
+    if(!(iFlags & FL_DUCKING))
+        return false;
+    if(GetPlayerSpeed(iClient) > 275.0)
+        return false;
+
+    return true;
+}

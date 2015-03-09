@@ -982,7 +982,7 @@ public Action:DecoyDetonate(Handle:hTimer, any:iRef)
         
         for(new iClient = 1; iClient <= MaxClients; iClient++) {
             if(iThrower && IsClientInGame(iClient)) {
-                if(IsPlayerAlive(iClient) && ((GetClientTeam(iClient) != ThrowerTeam) || 
+                if(IsPlayerAlive(iClient) && !g_baRespawnProtection[iClient] && ((GetClientTeam(iClient) != ThrowerTeam) || 
                 (g_bSelfFreeze && iClient == iThrower))) {
                     new Float:targetCoord[3];
                     GetClientAbsOrigin(iClient, targetCoord);
@@ -1514,6 +1514,10 @@ public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroad
             if(g_iFlashBlindDisable == 2 && iTeam == CS_TEAM_SPECTATOR)
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
+	
+	if(g_baRespawnProtection[iClient])
+		SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+	
     return Plugin_Continue;
 }
 

@@ -399,7 +399,7 @@ public OnPluginStart()
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
-	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
+    HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
@@ -1052,16 +1052,16 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
-	
-	if(iTeam == CS_TEAM_CT) {
-		// Respawn Protection
-		g_baRespawnProtection[iClient] = true;
-		if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
-			KillTimer(g_haRespawnProtectionTimer[iClient]);
-			g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
-		}
-		g_haRespawnProtectionTimer[iClient] = CreateTimer(g_bRespawnMode ? g_fCTRespawnSleepDuration : g_fCountdownTime + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
-	}
+    
+    if(iTeam == CS_TEAM_CT) {
+        // Respawn Protection
+        g_baRespawnProtection[iClient] = true;
+        if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haRespawnProtectionTimer[iClient]);
+            g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        }
+        g_haRespawnProtectionTimer[iClient] = CreateTimer(g_bRespawnMode ? g_fCTRespawnSleepDuration : g_fCountdownTime + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
+    }
 
     g_baAvailableToSwap[iClient] = false;
     g_baDiedBecauseRespawning[iClient] = false;
@@ -2007,8 +2007,8 @@ public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadc
     new iClient = GetClientOfUserId(iId);
     new iAttackerId = GetEventInt(hEvent, "attacker");
     new iAttackerClient = GetClientOfUserId(iAttackerId);
-	
-	if(g_baRespawnProtection[iClient] && iAttackerClient == 0)
-		return Plugin_Handled;
-	return Plugin_Continue;
+    
+    if(g_baRespawnProtection[iClient] && iAttackerClient == 0)
+        return Plugin_Handled;
+    return Plugin_Continue;
 }

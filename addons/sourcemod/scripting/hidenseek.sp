@@ -68,7 +68,6 @@
 #define INVISIBILITY_BREAK_DISTANCE   "200.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
-#define RESPAWN_PROTECTION_TIME       "5.0"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -109,6 +108,8 @@
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
 
 #define HIDE_RADAR_CSGO 1<<12
+
+#define RESPAWN_PROTECTION_TIME_ADDON 2.0
 
 public Plugin:myinfo =
 {
@@ -398,6 +399,7 @@ public OnPluginStart()
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
+	HookEvent("player_hurt", OnPlayerHurt);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
@@ -682,7 +684,7 @@ public Action:OnRoundStart(Handle:hEvent, const String:sName[], bool:dontBroadca
 
     RemoveHostages();
     
-    if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0 && !g_bRespawnMode) {
+    if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0) {
         if(g_hStartCountdown != INVALID_HANDLE) {
             KillTimer(g_hStartCountdown);
             g_hStartCountdown = INVALID_HANDLE;
@@ -1047,18 +1049,17 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iTeam = GetClientTeam(iClient);
 
     if(g_bRespawnMode) {
-        if(iTeam == CS_TEAM_T) {
+        if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
-        
-            // Respawn Protection
-            g_baRespawnProtection[iClient] = true;
-            if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
-                KillTimer(g_haRespawnProtectionTimer[iClient]);
-                g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
-            }
-            g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME, RemoveRespawnProtection, iClient);
-        }
     }
+	
+	// Respawn Protection
+	g_baRespawnProtection[iClient] = true;
+	if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+		KillTimer(g_haRespawnProtectionTimer[iClient]);
+		g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+	}
+	g_haRespawnProtectionTimer[iClient] = CreateTimer(g_bRespawnMode ? g_fCTRespawnSleepDuration : g_fCountdownTime + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
 
     g_baAvailableToSwap[iClient] = false;
     g_baDiedBecauseRespawning[iClient] = false;
@@ -1992,11 +1993,13 @@ public WriteWelcomeMessage(iClient)
     PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
 }
 
-public Action:RemoveRespawnProtection(Handle:timer, any:iClient) // data = client index
+public Action:RemoveRespawnProtection(Handle:hTimer, any:iClient) // data = client index
 {
-    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
-        KillTimer(g_haRespawnProtectionTimer[iClient]);
-        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
-    }
+    g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
     g_baRespawnProtection[iClient] = false;
+}
+
+public OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+	
 }

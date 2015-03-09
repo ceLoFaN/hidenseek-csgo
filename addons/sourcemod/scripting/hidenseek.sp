@@ -21,8 +21,12 @@
 #include <sdkhooks>
 #include <cstrike>
 
+#include "hidenseek/spawns.sp"
+
+#define PLUGIN_VERSION                "1.6.110"
+#define AUTHOR                        "ceLoFaN"
+
 // ConVar Defines
-#define PLUGIN_VERSION                "1.6.94"
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
 #define AIR_ACC                       "100"
@@ -56,6 +60,8 @@
 #define MOLOTOV_FRIENDLY_FIRE         "0"
 #define HIDE_RADAR                    "1"
 #define RESPAWN_ROUND_DURATION        "25"
+#define WELCOME_MESSAGE               "1"
+
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -106,7 +112,7 @@
 public Plugin:myinfo =
 {
     name = "HideNSeek",
-    author = "ceLoFaN",
+    author = AUTHOR,
     description = "CTs with only knives chase the Ts",
     version = PLUGIN_VERSION,
     url = "steamcommunity.com/id/celofan"
@@ -150,6 +156,7 @@ new Handle:g_hCTRespawnSleepDuration = INVALID_HANDLE;
 new Handle:g_hInvisibilityBreakDistance = INVALID_HANDLE;
 new Handle:g_hHideRadar = INVALID_HANDLE;
 new Handle:g_hRespawnRoundDuration = INVALID_HANDLE;
+new Handle:g_hWelcomeMessage = INVALID_HANDLE;
 
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
@@ -181,6 +188,7 @@ new Float:g_fCTRespawnSleepDuration;
 new Float:g_fInvisibilityBreakDistance;
 new bool:g_bHideRadar;
 new g_iRespawnRoundDuration;
+new bool:g_bWelcomeMessage;
 
 //RespawnMode vars
 new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -327,6 +335,7 @@ public OnPluginStart()
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
     g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hRespawnRoundDuration = CreateConVar("hns_respawn_mode_roundtime", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
+    g_hWelcomeMessage = CreateConVar("hns_welcome_message", WELCOME_MESSAGE, "Displays a welcome message when a player first joins a team (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -375,6 +384,7 @@ public OnPluginStart()
     HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
     HookConVarChange(g_hHideRadar, OnCvarChange);
     HookConVarChange(g_hRespawnRoundDuration, OnCvarChange);
+    HookConVarChange(g_hWelcomeMessage, OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -432,6 +442,7 @@ public OnConfigsExecuted()
     g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
     g_fCTRespawnSleepDuration = GetConVarFloat(g_hCTRespawnSleepDuration);
     g_bHideRadar = GetConVarBool(g_hHideRadar);
+    g_bWelcomeMessage = GetConVarBool(g_hWelcomeMessage);
     
     g_faGrenadeChance[NADE_FLASHBANG] = GetConVarFloat(g_hFlashbangChance);
     g_faGrenadeChance[NADE_MOLOTOV] = GetConVarFloat(g_hMolotovChance);
@@ -544,7 +555,9 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
     if (StrEqual("hns_hide_radar", sConVarName))
         g_bHideRadar = GetConVarBool(hConVar); else
     if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
-        g_iRespawnRoundDuration = GetConVarInt(hConVar); else        
+        g_iRespawnRoundDuration = GetConVarInt(hConVar); else
+    if (StrEqual("hns_welcome_message", sConVarName))
+        g_bWelcomeMessage = GetConVarBool(hConVar); else
     if(StrEqual("hns_airaccelerate", sConVarName)) {
         g_iAirAccelerate = StringToInt(sNewValue);
         if(g_iAirAccelerate) {
@@ -1953,7 +1966,10 @@ public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 {
     new iId = GetEventInt(hEvent, "userid");
     new iClient = GetClientOfUserId(iId);
-    if(!g_baWelcomeMsgShown[iClient]) {
+    if(!g_bEnabled) {
+        g_baWelcomeMsgShown[iClient] = true;
+    }
+    if(g_bWelcomeMessage && !g_baWelcomeMsgShown[iClient]) {
         g_baWelcomeMsgShown[iClient] = true;
         WriteWelcomeMessage(iClient);
     }
@@ -1961,5 +1977,5 @@ public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 
 public WriteWelcomeMessage(iClient)
 {
-    PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
+    PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
 }

@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.170"
+#define PLUGIN_VERSION                "1.6.171"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -1410,7 +1410,7 @@ public TrySwapPlayers(iClient)
         if(IsClientInGame(iTarget))
             if(!IsPlayerAlive(iTarget)) {
                 new iTargetTeam = GetClientTeam(iTarget);
-                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_T) || (iClient == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
+                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_T) || (iClientTeam == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
                     if(g_baAvailableToSwap[iTarget]) {
                         CS_SwitchTeam(iClient, iTargetTeam);
                         g_iaInitialTeamTrack[iClient] = iTargetTeam;

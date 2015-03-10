@@ -1,9 +1,10 @@
-g_iaRandomSpawnEntities[64] = {0, ...};
-g_iRandomSpawns = 0;
-g_fDistanceBetweenSpawns = 600.0;
+new g_iaRandomSpawnEntities[64] = {0, ...};
+new g_iRandomSpawns = 0;
+new Float:g_fDistanceBetweenSpawns = 600.0;
 
 public GetMapRandomSpawnEntities()
 {
+    new iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "info_deathmatch_spawn")) != -1) {
         if(g_iRandomSpawns >= 64)
             break;
@@ -34,7 +35,7 @@ public TrackRandomSpawnEntity(iEntity)
     return g_iRandomSpawns - 1;
 }
 
-public CreateRandomSpawnEntity(faOrigin[3])
+public CreateRandomSpawnEntity(Float:faOrigin[3])
 {
     new iRandomSpawnEntity = CreateEntityByName("info_deathmatch_spawn");
     if(iRandomSpawnEntity != -1) {
@@ -45,14 +46,29 @@ public CreateRandomSpawnEntity(faOrigin[3])
     return iRandomSpawnEntity;
 }
 
-public bool:IsRandomSpawnPointValid(faOrigin[3])
+public bool:IsRandomSpawnPointValid(Float:faOrigin[3])
 {
     for(new i = 0; i < g_iRandomSpawns; i++) {
         new Float:faCompareOrigin[3];
-        Entity_GetAbsOrigin(g_iaRandomSpawnEntities[i], faCompareOrigin);
+        GetEntPropVector(g_iaRandomSpawnEntities[i], Prop_Data, "m_vecOrigin", faCompareOrigin);
         if(GetVectorDistance(faOrigin, faCompareOrigin) < g_fDistanceBetweenSpawns)
             return false;
     }
+
+    return true;
+}
+
+public bool:CanPlayerGenerateRandomSpawn(iClient)
+{
+    new iFlags = GetEntityFlags(iClient);
+    if(!(iFlags & FL_ONGROUND))
+        return false;
+    if((iFlags & FL_INWATER))
+        return false;
+    if(!(iFlags & FL_DUCKING))
+        return false;
+    if(GetPlayerSpeed(iClient) > 275.0)
+        return false;
 
     return true;
 }

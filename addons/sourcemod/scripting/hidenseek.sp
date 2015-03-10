@@ -21,15 +21,16 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#include "hidenseek/spawns.sp"
-
-#define PLUGIN_VERSION                "1.6.110"
+#define PLUGIN_VERSION                "1.6.166"
 #define AUTHOR                        "ceLoFaN"
+
+#include "hidenseek/players.sp"
+#include "hidenseek/spawns.sp"
+#include "hidenseek/respawn.sp"
 
 // ConVar Defines
 #define HIDENSEEK_ENABLED             "1"
 #define COUNTDOWN_TIME                "10.0"
-#define AIR_ACC                       "100"
 #define ROUND_POINTS                  "3"
 #define BONUS_POINTS                  "2"
 #define MAXIMUM_WIN_STREAK            "5"
@@ -59,15 +60,14 @@
 #define SUICIDE_POINTS_PENALTY        "3"
 #define MOLOTOV_FRIENDLY_FIRE         "0"
 #define HIDE_RADAR                    "1"
-#define RESPAWN_ROUND_DURATION        "25"
 #define WELCOME_MESSAGE               "1"
-
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
 #define INVISIBILITY_BREAK_DISTANCE   "200.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
+#define RESPAWN_ROUND_DURATION        "25"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -123,7 +123,6 @@ public Plugin:myinfo =
 new Handle:g_hEnabled = INVALID_HANDLE;
 new Handle:g_hCountdownTime = INVALID_HANDLE;
 new Handle:g_hCountdownFade = INVALID_HANDLE;
-new Handle:g_hAirAccelerate = INVALID_HANDLE;
 new Handle:g_hRoundPoints = INVALID_HANDLE;
 new Handle:g_hBonusPointsMultiplier = INVALID_HANDLE;
 new Handle:g_hMaximumWinStreak = INVALID_HANDLE;
@@ -163,7 +162,6 @@ new Handle:g_hWelcomeMessage = INVALID_HANDLE;
 new bool:g_bEnabled;
 new Float:g_fCountdownTime;
 new bool:g_bCountdownFade;
-new g_iAirAccelerate;
 new g_iRoundPoints;
 new g_iBonusPointsMultiplier;
 new g_iMaximumWinStreak;
@@ -183,7 +181,7 @@ new g_iSuicidePointsPenalty;
 new bool:g_bMolotovFriendlyFire;
 new Float:g_faGrenadeChance[6] = {0.0, ...};
 new g_iaGrenadeMaximumAmounts[6] = {0, ...};
-new bool:g_bRespawnMode = true;
+new bool:g_bRespawnMode;
 new Float:g_fBaseRespawnTime;
 new Float:g_fInvisibilityDuration;
 new Float:g_fCTRespawnSleepDuration;
@@ -194,15 +192,14 @@ new bool:g_bWelcomeMessage;
 
 //RespawnMode vars
 new Handle:g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new Handle:g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new Handle:g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-new g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 new bool:g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
 new bool:g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 new g_iRoundDuration = 0;
 new g_iMapTimelimit = 0;
 new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
+new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new bool:g_bEnoughRespawnPoints = false;
 new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
 new g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
@@ -257,9 +254,9 @@ new const String:g_saGrenadeChatNames[][] = {
 };
 new const g_iaGrenadeOffsets[] = {15, 17, 16, 14, 18, 17};
 
-//Add your protected ConVars here!
-new const String:g_saProtectedConVars[][] = {
-    "sv_airaccelerate",        // use hns_airaccelerate instead
+//Add your Preset ConVars here!
+new const String:g_saPresetConVars[][] = {
+    "sv_airaccelerate",
     "mp_limitteams",
     "mp_freezetime",
     "sv_alltalk",
@@ -275,8 +272,8 @@ new const String:g_saProtectedConVars[][] = {
     "sv_staminajumpcost",
     "sv_staminalandcost"
 };
-new g_iaForcedValues[] = {
-    120,      // sv_airaccelerate
+new g_iaDefaultValues[] = {
+    100,      // sv_airaccelerate
     1,        // mp_limitteams
     0,        // mp_freezetime
     1,        // sv_alltalk
@@ -292,7 +289,6 @@ new g_iaForcedValues[] = {
     0,        // sv_staminajumpcost
     0,        // sv_staminalandcost
 };
-new Handle:g_haProtectedConvar[sizeof(g_saProtectedConVars)] = {INVALID_HANDLE, ...};
 
 public OnPluginStart()
 {
@@ -304,7 +300,6 @@ public OnPluginStart()
     g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
     g_hCountdownTime = CreateConVar("hns_countdown_time", COUNTDOWN_TIME, "The countdown duration during which CTs are frozen", _, true, 0.0, true, 15.0);
     g_hCountdownFade = CreateConVar("hns_countdown_fade", COUNTDOWN_FADE, "Fades the screen for CTs during countdown (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
-    g_hAirAccelerate = CreateConVar("hns_airaccelerate", AIR_ACC, "The value at which sv_airaccelerate is being kept. Set to 0 to use sv_airaccelerate instead.", _, true, 12.0);
     g_hRoundPoints = CreateConVar("hns_round_points", ROUND_POINTS, "Round points for every player in the winning team", _, true, 0.0);
     g_hBonusPointsMultiplier = CreateConVar("hns_bonus_points_multiplier", BONUS_POINTS, "Bonus points for kills (CTs) and for surviving (Ts)", _, true, 1.0, true, 3.0);
     g_hMaximumWinStreak = CreateConVar("hns_maximum_win_streak", MAXIMUM_WIN_STREAK, "The number of consecutive rounds won by T before the teams get swapped (0=DSBL)", _, true, 0.0);
@@ -339,18 +334,15 @@ public OnPluginStart()
     g_hCTRespawnSleepDuration = CreateConVar("hns_ct_respawn_sleep_duration", CT_RESPAWN_SLEEP_DURATION, "The duration after respawning during which CTs are asleep in Respawn mode", _, true, 0.0);
     g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hRespawnRoundDuration = CreateConVar("hns_respawn_mode_roundtime", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
-    g_hWelcomeMessage = CreateConVar("hns_welcome_message", WELCOME_MESSAGE, "Displays a welcome message when a player first joins a team (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1);
+    g_hWelcomeMessage = CreateConVar("hns_welcome_message", WELCOME_MESSAGE, "Displays a welcome message when a player first joins a team (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
-    //Enforce some server ConVars
-    for(new i = 0; i < sizeof(g_saProtectedConVars); i++)
+    //Set some server ConVars
+    for(new i = 0; i < sizeof(g_saPresetConVars); i++)
     {
-        g_haProtectedConvar[i] = FindConVar(g_saProtectedConVars[i]);
-        SetConVarInt(g_haProtectedConvar[i], g_iaForcedValues[i], true);
-        HookConVarChange(g_haProtectedConvar[i], OnCvarChange);
+        SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
     }
-    HookConVarChange(g_hAirAccelerate, OnCvarChange);    // hns_airaccelerate -> sv_airaccelerate
     HookConVarChange(g_hEnabled, OnCvarChange);
     HookConVarChange(g_hCountdownTime, OnCvarChange);
     HookConVarChange(g_hCountdownFade, OnCvarChange);
@@ -430,15 +422,7 @@ public OnConfigsExecuted()
     GameModeSetup();
     g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
     g_bCountdownFade = GetConVarBool(g_hCountdownFade);
-    g_iAirAccelerate = GetConVarInt(g_hAirAccelerate);
-    if(g_iAirAccelerate) {
-        for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-            if(StrEqual(g_saProtectedConVars[i], "sv_airaccelerate")) {
-                g_iaForcedValues[i] = g_iAirAccelerate;
-                SetConVarInt(FindConVar("sv_airaccelerate"), g_iAirAccelerate);    //why even try to change
-            }
-        }
-    }
+
     g_iRoundPoints = GetConVarInt(g_hRoundPoints);
     g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
     g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak); 
@@ -562,28 +546,7 @@ public OnCvarChange(Handle:hConVar, const String:sOldValue[], const String:sNewV
     if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
         g_iRespawnRoundDuration = GetConVarInt(hConVar); else
     if (StrEqual("hns_welcome_message", sConVarName))
-        g_bWelcomeMessage = GetConVarBool(hConVar); else
-    if(StrEqual("hns_airaccelerate", sConVarName)) {
-        g_iAirAccelerate = StringToInt(sNewValue);
-        if(g_iAirAccelerate) {
-            for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-                if(StrEqual(g_saProtectedConVars[i], "sv_airaccelerate")) {
-                    g_iaForcedValues[i] = g_iAirAccelerate;
-                    SetConVarInt(FindConVar("sv_airaccelerate"), g_iAirAccelerate);    //why even try to change
-                }
-            }
-        }
-    }
-    else {
-        if(!(StrEqual("sv_airaccelerate", sConVarName) && !g_iAirAccelerate)) {
-            for(new i = 0; i < sizeof(g_saProtectedConVars); i++) {
-                if(StrEqual(g_saProtectedConVars[i], sConVarName) && StringToInt(sNewValue) != g_iaForcedValues[i]) {
-                    SetConVarInt(hConVar, g_iaForcedValues[i]);
-                    PrintToServer("  \x04[HNS] %s is a protected CVAR.", sConVarName);
-                }
-            }
-        }
-    }
+        g_bWelcomeMessage = GetConVarBool(hConVar);
 }
 
 public OnMapStart()
@@ -600,8 +563,7 @@ public OnMapStart()
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
     
     if(g_bEnabled) {
-        SetConVarInt(FindConVar("mp_autoteambalance"), 1);    // Not enforced
-        SetConVarInt(FindConVar("sv_gravity"), 800);        // Not enforced
+        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
     
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
@@ -609,7 +571,8 @@ public OnMapStart()
         CreateHostageRescue();    // Make sure T wins when the time runs out
         RemoveBombsites();
     }
-    CreateTimer(1.0, RespawnDeadPlayers, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(1.0, RespawnDeadPlayersTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    g_bEnoughRespawnPoints = false;
 }
 
 public OnMapTimeLeftChanged()
@@ -629,15 +592,10 @@ public Action:EnableRoundObjectives(Handle:hTimer)
     g_hRoundTimer = INVALID_HANDLE;
 }
 
-public Action:RespawnDeadPlayers(Handle:hTimer) 
+public Action:RespawnDeadPlayersTimer(Handle:hTimer) 
 {
     if(g_bRespawnMode)
-        for(new iClient = 1; iClient < MaxClients; iClient++) {
-            if(IsClientInGame(iClient))
-                if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
-                    if(!IsPlayerAlive(iClient))
-                        RespawnPlayerLazy(iClient);
-        }
+        RespawnDeadPlayers(g_fBaseRespawnTime);
     return Plugin_Continue;
 }
 
@@ -649,14 +607,11 @@ public OnMapEnd()
             g_haFreezeTimer[iClient] = INVALID_HANDLE;
             g_iCountdownCount = 0;
         }
-        if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-            KillTimer(g_haRespawnFreezeCountdown[iClient]);
-            g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
-            g_iaRespawnCountdownCount[iClient] = 0;
-        }
-        if(g_haRespawn[iClient] != INVALID_HANDLE) {
-            KillTimer(g_haRespawn[iClient]);
-            g_haRespawn[iClient] = INVALID_HANDLE;
+        CloseRespawnFreezeCountdown(iClient);
+        CancelPlayerRespawn(iClient);
+        if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haSpawnGenerateTimer[iClient]);
+            g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
         }
     }
     if(g_hRoundTimer != INVALID_HANDLE) {
@@ -822,7 +777,7 @@ public Action:Command_Respawn(iClient, args)
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         if(!g_bRespawnMode)
             PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Off");
-        else if(g_haRespawn[iClient] != INVALID_HANDLE)
+        else if(IsPlayerRespawning(iClient))
             PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Alive");
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
             PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted In Flight");
@@ -844,7 +799,7 @@ public Action:Command_Respawn(iClient, args)
                 }
             }
             Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
-            RespawnPlayerLazy(iClient);
+            RespawnPlayerLazy(iClient, g_fBaseRespawnTime);
         }
     }
     return Plugin_Handled;
@@ -1022,7 +977,11 @@ public OnClientDisconnect(iClient)
     if(g_haInvisible[iClient] != INVALID_HANDLE) {
         KillTimer(g_haInvisible[iClient]);
         g_haInvisible[iClient] = INVALID_HANDLE;
-        g_iaRespawnCountdownCount[iClient] = 0;
+    }
+    CloseRespawnFreezeCountdown(iClient);
+    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haSpawnGenerateTimer[iClient]);
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
     g_baToggleKnife[iClient] = true;
 }
@@ -1069,29 +1028,36 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
     
     CreateTimer(0.0, RemoveRadar, iClient);
+
+    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haSpawnGenerateTimer[iClient]);
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+    }
+    if(!g_bEnoughRespawnPoints)
+        g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
     
     return Plugin_Continue;
 }
 
-public Action:RespawnCountdown(Handle:hTimer, any:iClient) {
-    new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
-    g_iaRespawnCountdownCount[iClient]++;
-    if(g_iaRespawnCountdownCount[iClient] < iCountdownTimeFloor) {
-        if(IsClientInGame(iClient)) {
-            new iTimeDelta = iCountdownTimeFloor - g_iaRespawnCountdownCount[iClient];
-            PrintCenterText(iClient, "\n  %t", "Wake Up", iTimeDelta, (iTimeDelta == 1) ? "" : "s");
+public Action:GenerateRandomSpawns(Handle:hTimer, any:iClient) {
+    if(IsPlayerAlive(iClient) && CanPlayerGenerateRandomSpawn(iClient)) {
+        new Float:faCoord[3];
+        GetClientAbsOrigin(iClient, faCoord);
+        if(IsRandomSpawnPointValid(faCoord)) {
+            new iSpawn = CreateRandomSpawnEntity(faCoord);
+            new iSpawnID = TrackRandomSpawnEntity(iSpawn);
+            if(iSpawnID >= 63)
+                g_bEnoughRespawnPoints = true;
         }
         return Plugin_Continue;
     }
     else {
-        g_iaRespawnCountdownCount[iClient] = 0;
-        if(IsClientInGame(iClient))
-            PrintCenterText(iClient, "\n  %t", "Ready To Go");
-        //EmitSoundToAll(SOUND_GOGOGO);
-        g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
         return Plugin_Stop;
     }
 }
+
+
 
 public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
 {
@@ -1135,11 +1101,7 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                     Freeze(iClient, g_fCTRespawnSleepDuration, COUNTDOWN);
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
                     PrintCenterText(iClient, "\n  %t", "Wake Up", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
-                    if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-                        KillTimer(g_haRespawnFreezeCountdown[iClient]);
-                        g_iaRespawnCountdownCount[iClient] = 0;
-                    }
-                    g_haRespawnFreezeCountdown[iClient] = CreateTimer(1.0, RespawnCountdown, iClient, TIMER_REPEAT);
+                    StartRespawnFreezeCountdown(iClient, g_fCTRespawnSleepDuration);
                 }
             }
             else if(g_fCountdownTime > 0.0 && fDefreezeTime > 0.0 && (fDefreezeTime < g_fCountdownTime + 1.0)) {
@@ -1152,15 +1114,6 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
         }    
     }
     return Plugin_Continue;
-}
-
-public Action:RespawnPlayer(Handle:hTimer, any:iClient)
-{
-    if(iClient > 0 && iClient < MaxClients && IsClientInGame(iClient)) {
-        if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
-            CS_RespawnPlayer(iClient);
-    }
-    g_haRespawn[iClient] = INVALID_HANDLE;
 }
 
 public GameModeSetup() {
@@ -1241,9 +1194,8 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     decl String:sChosenTeam[2];
     GetCmdArg(1, sChosenTeam, sizeof(sChosenTeam));
     new iChosenTeam = StringToInt(sChosenTeam);
-    if(iChosenTeam == CS_TEAM_SPECTATOR && g_haRespawn[iClient] != INVALID_HANDLE) {
-        KillTimer(g_haRespawn[iClient]);
-        g_haRespawn[iClient] = INVALID_HANDLE;
+    if(iChosenTeam == CS_TEAM_SPECTATOR && IsPlayerRespawning(iClient)) {
+        CancelPlayerRespawn(iClient);
     }
 
     if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
@@ -1299,26 +1251,6 @@ public Action:Command_JoinTeam(iClient, const String:sCommand[], iArgCount)
     }
     SilentUnfreeze(iClient);
     return Plugin_Continue;
-}
-
-RespawnPlayerLazy(iClient, bool:bInstantaneous = false) {
-    if(g_bRespawnMode && g_haRespawn[iClient] == INVALID_HANDLE) {
-        if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT) {
-            if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
-                KillTimer(g_haRespawnFreezeCountdown[iClient]);
-                g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
-            }
-            if(bInstantaneous) {
-                g_haRespawn[iClient] = CreateTimer(0.0, RespawnPlayer, iClient);
-            }
-            else {
-                g_haRespawn[iClient] = CreateTimer(g_fBaseRespawnTime, RespawnPlayer, iClient);
-                PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Countdown", g_fBaseRespawnTime);
-            }
-        }
-        else
-            PrintToChat(iClient, "  \x04[HNS] %t", "Invalid Team");
-    }
 }
 
 public Action:Command_Kill(iClient, const String:sCommand[], iArgCount)
@@ -1432,7 +1364,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                         CS_SwitchTeam(iVictim, CS_TEAM_CT);
                         g_iaInitialTeamTrack[iVictim] = CS_TEAM_CT;
 
-                        RespawnPlayerLazy(iAttacker, true);
+                        RespawnPlayerLazy(iAttacker, 0.0);
 
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
                             "Killing Notify Attacker", sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
@@ -1465,7 +1397,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(g_bRespawnMode) {
         if(g_baAvailableToSwap[iVictim]) {
             TrySwapPlayers(iVictim);
-            RespawnPlayerLazy(iVictim);
+            RespawnPlayerLazy(iVictim, g_fBaseRespawnTime);
         }
     }
     return Plugin_Continue;

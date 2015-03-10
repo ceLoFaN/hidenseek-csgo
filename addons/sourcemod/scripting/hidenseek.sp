@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.166"
+#define PLUGIN_VERSION                "1.6.168"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -201,7 +201,7 @@ new Handle:g_hRoundTimer = INVALID_HANDLE;
 new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new bool:g_bEnoughRespawnPoints = false;
 new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
-new g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -1447,8 +1447,8 @@ public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroad
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
 	
-	if(g_baRespawnProtection[iClient])
-		SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+    if(g_baRespawnProtection[iClient])
+        SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
 	
     return Plugin_Continue;
 }

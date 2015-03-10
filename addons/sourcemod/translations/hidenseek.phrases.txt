@@ -321,11 +321,10 @@
 		"en"			"You will wake up in {1} second{2}."
 	}
 	
-	"Ready To Go"
+	"Awake"
 	{
-		"en"			"You are ready to go."
+		"en"			"You are awake."
 	}
-	
 	//Console phrases
 	
 	"Spectate Deny Alive"

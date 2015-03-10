@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.165"
+#define PLUGIN_VERSION                "1.6.166"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -108,6 +108,8 @@
 #define SOUND_GOGOGO               "player\vo\fbihrt\radiobotgo01.wav"
 
 #define HIDE_RADAR_CSGO 1<<12
+
+#define RESPAWN_PROTECTION_TIME_ADDON 2.0
 
 public Plugin:myinfo =
 {
@@ -198,6 +200,8 @@ new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
 new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new bool:g_bEnoughRespawnPoints = false;
+new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
+new g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars    
 new Float:g_fRoundStartTime;    // Records the time when the round started
@@ -387,6 +391,7 @@ public OnPluginStart()
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
+    HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
@@ -932,7 +937,7 @@ public Action:DecoyDetonate(Handle:hTimer, any:iRef)
         
         for(new iClient = 1; iClient <= MaxClients; iClient++) {
             if(iThrower && IsClientInGame(iClient)) {
-                if(IsPlayerAlive(iClient) && ((GetClientTeam(iClient) != ThrowerTeam) || 
+                if(IsPlayerAlive(iClient) && !g_baRespawnProtection[iClient] && ((GetClientTeam(iClient) != ThrowerTeam) || 
                 (g_bSelfFreeze && iClient == iThrower))) {
                     new Float:targetCoord[3];
                     GetClientAbsOrigin(iClient, targetCoord);
@@ -1005,6 +1010,16 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(g_bRespawnMode) {
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
+    }
+    
+    if(iTeam == CS_TEAM_CT) {
+        // Respawn Protection
+        g_baRespawnProtection[iClient] = true;
+        if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+            KillTimer(g_haRespawnProtectionTimer[iClient]);
+            g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        }
+        g_haRespawnProtectionTimer[iClient] = CreateTimer(g_bRespawnMode ? g_fCTRespawnSleepDuration : g_fCountdownTime + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
     }
 
     g_baAvailableToSwap[iClient] = false;
@@ -1282,7 +1297,7 @@ public OnWeaponSwitchPost(iClient, iWeapon)
         }
         
         new Float:fCurrentTime = GetGameTime();
-        if(fCurrentTime < g_fCountdownOverTime) {
+        if(fCurrentTime < g_fCountdownOverTime && !g_bRespawnMode) {
             SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", g_fCountdownOverTime);
             SetEntPropFloat(iWeapon, Prop_Send, "m_flNextSecondaryAttack", g_fCountdownOverTime);
         }
@@ -1431,6 +1446,10 @@ public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroad
             if(g_iFlashBlindDisable == 2 && iTeam == CS_TEAM_SPECTATOR)
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
+	
+	if(g_baRespawnProtection[iClient])
+		SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
+	
     return Plugin_Continue;
 }
 
@@ -1461,7 +1480,7 @@ public Action:OnPlayerRunCmd(iClient, &iButtons, &iImpulse, Float:faVelocity[3],
                     iButtons &= ~(IN_ATTACK | IN_ATTACK2);    //Block attacks for Ts
                     return Plugin_Changed;
                 }
-                else if(IsWeaponGrenade(sWeaponName) && fCurrentTime < g_fCountdownOverTime) {
+                else if(IsWeaponGrenade(sWeaponName) && fCurrentTime < g_fCountdownOverTime && !g_bRespawnMode) {
                     SetEntPropFloat(iActiveWeapon, Prop_Send, "m_flNextPrimaryAttack", g_fCountdownOverTime);
                     SetEntPropFloat(iActiveWeapon, Prop_Send, "m_flNextSecondaryAttack", g_fCountdownOverTime);
                     iButtons &= ~(IN_ATTACK | IN_ATTACK2);    //Block attacks for Ts
@@ -1910,4 +1929,22 @@ public OnPlayerTeam(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
 public WriteWelcomeMessage(iClient)
 {
     PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
+}
+
+public Action:RemoveRespawnProtection(Handle:hTimer, any:iClient) // data = client index
+{
+    g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+    g_baRespawnProtection[iClient] = false;
+}
+
+public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
+{
+    new iId = GetEventInt(hEvent, "userid");
+    new iClient = GetClientOfUserId(iId);
+    new iAttackerId = GetEventInt(hEvent, "attacker");
+    new iAttackerClient = GetClientOfUserId(iAttackerId);
+    
+    if(g_baRespawnProtection[iClient] && iAttackerClient == 0)
+        return Plugin_Handled;
+    return Plugin_Continue;
 }

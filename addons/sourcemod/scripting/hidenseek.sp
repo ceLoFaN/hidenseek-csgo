@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.168"
+#define PLUGIN_VERSION                "1.6.169"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -708,7 +708,7 @@ public OnWeaponFire(Handle:hEvent, const String:name[], bool:dontBroadcast)
             new i;
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             new iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
-            new Handle:hPack;
+            new Handle:hPack = CreateDataPack();
             if(g_haInvisible[iClient] != INVALID_HANDLE) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);

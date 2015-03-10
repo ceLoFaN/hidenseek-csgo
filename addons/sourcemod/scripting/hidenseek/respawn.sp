@@ -21,10 +21,10 @@ public StartRespawnFreezeCountdown(iClient, Float:fDuration)
     new iDuration = RoundToFloor(fDuration);
     CloseRespawnFreezeCountdown(iClient);
 
-    new Handle:hPack;
+    new Handle:hPack = CreateDataPack();
+    g_haRespawnFreezeCountdown[iClient] = CreateDataTimer(1.0, RespawnFreezeCountdownTimer, hPack, TIMER_REPEAT);
     WritePackCell(hPack, iClient);
     WritePackCell(hPack, iDuration);
-    g_haRespawnFreezeCountdown[iClient] = CreateDataTimer(1.0, RespawnFreezeCountdownTimer, hPack, TIMER_REPEAT);
 }
 
 public Action:RespawnFreezeCountdownTimer(Handle:hTimer, Handle:hPack) {

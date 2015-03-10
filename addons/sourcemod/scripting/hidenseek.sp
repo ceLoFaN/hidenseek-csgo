@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.168"
+#define PLUGIN_VERSION                "1.6.170"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -708,7 +708,7 @@ public OnWeaponFire(Handle:hEvent, const String:name[], bool:dontBroadcast)
             new i;
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             new iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
-            new Handle:hPack;
+            new Handle:hPack = CreateDataPack();
             if(g_haInvisible[iClient] != INVALID_HANDLE) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
@@ -1410,7 +1410,7 @@ public TrySwapPlayers(iClient)
         if(IsClientInGame(iTarget))
             if(!IsPlayerAlive(iTarget)) {
                 new iTargetTeam = GetClientTeam(iTarget);
-                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_CT) || (iClient == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
+                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_T) || (iClient == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
                     if(g_baAvailableToSwap[iTarget]) {
                         CS_SwitchTeam(iClient, iTargetTeam);
                         g_iaInitialTeamTrack[iClient] = iTargetTeam;

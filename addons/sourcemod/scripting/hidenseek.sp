@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.170"
+#define PLUGIN_VERSION                "1.6.177"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -571,8 +571,16 @@ public OnMapStart()
         CreateHostageRescue();    // Make sure T wins when the time runs out
         RemoveBombsites();
     }
+
     CreateTimer(1.0, RespawnDeadPlayersTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     g_bEnoughRespawnPoints = false;
+    ResetMapRandomSpawnPoints();
+    CreateTimer(1.0, GetMapRandomSpawnEntitiesTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action:GetMapRandomSpawnEntitiesTimer(Handle:hTimer)
+{
+    GetMapRandomSpawnEntities();
 }
 
 public OnMapTimeLeftChanged()
@@ -1046,7 +1054,7 @@ public Action:GenerateRandomSpawns(Handle:hTimer, any:iClient) {
         if(IsRandomSpawnPointValid(faCoord)) {
             new iSpawn = CreateRandomSpawnEntity(faCoord);
             new iSpawnID = TrackRandomSpawnEntity(iSpawn);
-            if(iSpawnID >= 63)
+            if(iSpawnID >= MAXIMUM_SPAWN_POINTS)
                 g_bEnoughRespawnPoints = true;
         }
         return Plugin_Continue;
@@ -1410,7 +1418,7 @@ public TrySwapPlayers(iClient)
         if(IsClientInGame(iTarget))
             if(!IsPlayerAlive(iTarget)) {
                 new iTargetTeam = GetClientTeam(iTarget);
-                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_T) || (iClient == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
+                if((iClientTeam == CS_TEAM_CT && iTargetTeam == CS_TEAM_T) || (iClientTeam == CS_TEAM_T && iTargetTeam == CS_TEAM_CT))
                     if(g_baAvailableToSwap[iTarget]) {
                         CS_SwitchTeam(iClient, iTargetTeam);
                         g_iaInitialTeamTrack[iClient] = iTargetTeam;

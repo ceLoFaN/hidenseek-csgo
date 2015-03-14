@@ -284,8 +284,8 @@
 	"Welcome Msg"
 	{
 		"#format"		"{1:s},{2:s},{3:t}"
-		"en"			"Welcome! This server is running Hide'N'Seek {1} by {2} in {3} mode."
-		"ru"			"Добро пожаловать! На сервере запущен Hide'N'Seek {1} {2} в {3} режиме."
+		"en"			"Welcome! This server is running Hide'N'Seek {1} by {2}, in {3} mode."
+		"ru"			"Добро пожаловать! На сервере запущен Hide'N'Seek {1} {2}, в {3} режиме."
 	}
 	
 	"Normal Mode"

@@ -65,7 +65,7 @@ public bool:CanPlayerGenerateRandomSpawn(iClient)
         return false;
     if((iFlags & FL_INWATER))
         return false;
-    if(!(iFlags & FL_DUCKING))
+    if(iFlags & FL_DUCKING)
         return false;
     if(GetPlayerSpeed(iClient) > 275.0)
         return false;

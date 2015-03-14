@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.171"
+#define PLUGIN_VERSION                "1.6.175"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -571,8 +571,11 @@ public OnMapStart()
         CreateHostageRescue();    // Make sure T wins when the time runs out
         RemoveBombsites();
     }
+
     CreateTimer(1.0, RespawnDeadPlayersTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     g_bEnoughRespawnPoints = false;
+    ResetMapRandomSpawnPoints();
+    GetMapRandomSpawnEntities();
 }
 
 public OnMapTimeLeftChanged()

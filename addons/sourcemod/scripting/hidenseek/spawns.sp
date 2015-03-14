@@ -1,12 +1,13 @@
-new g_iaRandomSpawnEntities[64] = {0, ...};
+#define MAXIMUM_SPAWN_POINTS    40
+new g_iaRandomSpawnEntities[MAXIMUM_SPAWN_POINTS] = {0, ...};
 new g_iRandomSpawns = 0;
-new Float:g_fDistanceBetweenSpawns = 600.0;
+new Float:g_fDistanceBetweenSpawns = 550.0;
 
 public GetMapRandomSpawnEntities()
 {
     new iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "info_deathmatch_spawn")) != -1) {
-        if(g_iRandomSpawns >= 64)
+        if(g_iRandomSpawns >= MAXIMUM_SPAWN_POINTS)
             break;
         g_iaRandomSpawnEntities[g_iRandomSpawns] = iEntity;
         g_iRandomSpawns++;
@@ -26,7 +27,7 @@ public ResetMapRandomSpawnPoints()
 
 public TrackRandomSpawnEntity(iEntity)
 {
-    if(g_iRandomSpawns >= 64)
+    if(g_iRandomSpawns >= MAXIMUM_SPAWN_POINTS)
         return -1;
 
     g_iaRandomSpawnEntities[g_iRandomSpawns] = iEntity;

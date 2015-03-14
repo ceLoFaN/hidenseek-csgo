@@ -21,9 +21,10 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.177"
+#define PLUGIN_VERSION                "1.6.182"
 #define AUTHOR                        "ceLoFaN"
 
+#include "hidenseek/penalties.sp"
 #include "hidenseek/players.sp"
 #include "hidenseek/spawns.sp"
 #include "hidenseek/respawn.sp"
@@ -807,7 +808,7 @@ public Action:Command_Respawn(iClient, args)
                 }
             }
             Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
-            RespawnPlayerLazy(iClient, g_fBaseRespawnTime);
+            RespawnPlayerLazy(iClient, g_fBaseRespawnTime + RespawnPenaltyTime(iClient));
         }
     }
     return Plugin_Handled;
@@ -1144,6 +1145,9 @@ public GameModeSetup() {
         SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
         SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
         SetRoundTime(g_iRespawnRoundDuration, true);
+        for(new iClient = 0; iClient < MaxClients; iClient++) {
+            ResetSuicidePenaltyStacks(iClient);
+        }
     }
     else {
         SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
@@ -1346,8 +1350,8 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
 
     if(iVictim > 0 && iVictim <= MaxClients) {
-        new iTeam = GetClientTeam(iVictim);
-        if(iTeam == CS_TEAM_T) {
+        new iVictimTeam = GetClientTeam(iVictim);
+        if(iVictimTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {
                 if(GetClientTeam(iAttacker) == CS_TEAM_CT) {
@@ -1355,6 +1359,10 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                     CS_SetClientContributionScore(iAttacker, CS_GetClientContributionScore(iAttacker) + g_iBonusPointsMultiplier - 1); 
                     decl String:sNickname[MAX_NAME_LENGTH];                    
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
+
+                    RemoveSuicidePenaltyStacks(iVictim);
+                    RemoveSuicidePenaltyStacks(iAttacker);
+                    
                     if(!g_bRespawnMode)
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
                             "Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
@@ -1372,7 +1380,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                         CS_SwitchTeam(iVictim, CS_TEAM_CT);
                         g_iaInitialTeamTrack[iVictim] = CS_TEAM_CT;
 
-                        RespawnPlayerLazy(iAttacker, 0.0);
+                        RespawnPlayerLazy(iAttacker, 0.0 + RespawnPenaltyTime(iAttacker));
 
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
                             "Killing Notify Attacker", sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
@@ -1388,24 +1396,32 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         SilentUnfreeze(iVictim);
 
     if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0) {
-        if(!(iAssister > 0 && iAssister <= MaxClients) && !g_baDiedBecauseRespawning[iVictim]) {
-            SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
-            if(GetClientTeam(iVictim) == CS_TEAM_T)
-                g_baAvailableToSwap[iVictim] = true;
-            if(g_iSuicidePointsPenalty) {
-                CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
-                PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
+        if(!(iAssister > 0 && iAssister <= MaxClients)) {
+            if(!g_baDiedBecauseRespawning[iVictim]) {
+                SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
+                if(GetClientTeam(iVictim) == CS_TEAM_T)
+                    g_baAvailableToSwap[iVictim] = true;
+                if(g_iSuicidePointsPenalty) {
+                    CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
+                    PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
+                }
             }
         }
-        if(GetClientTeam(iVictim) == CS_TEAM_CT && !g_baDiedBecauseRespawning[iVictim])
-            g_baAvailableToSwap[iVictim] = true;
+        if(GetClientTeam(iVictim) == CS_TEAM_CT) {
+            if(!g_baDiedBecauseRespawning[iVictim])
+                g_baAvailableToSwap[iVictim] = true;
+        }
+        else if(GetClientTeam(iVictim) == CS_TEAM_T) {
+            if(!g_baDiedBecauseRespawning[iVictim])
+                AddSuicidePenaltyStacks(iVictim);
+        }
         
     }
 
     if(g_bRespawnMode) {
         if(g_baAvailableToSwap[iVictim]) {
             TrySwapPlayers(iVictim);
-            RespawnPlayerLazy(iVictim, g_fBaseRespawnTime);
+            RespawnPlayerLazy(iVictim, g_fBaseRespawnTime + RespawnPenaltyTime(iVictim));
         }
     }
     return Plugin_Continue;

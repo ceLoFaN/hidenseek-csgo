@@ -9,7 +9,8 @@ public RespawnPlayerLazy(iClient, Float:fDelay)
             CloseRespawnFreezeCountdown(iClient);
             CancelPlayerRespawn(iClient);
             g_haRespawn[iClient] = CreateTimer(fDelay, RespawnPlayerDelayed, iClient);
-            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Countdown", fDelay);
+            if(fDelay > 0.0)
+                PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Countdown", fDelay);
         }
         else
             PrintToChat(iClient, "  \x04[HNS] %t", "Invalid Team");

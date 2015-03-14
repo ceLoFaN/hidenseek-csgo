@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.175"
+#define PLUGIN_VERSION                "1.6.177"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/players.sp"
@@ -575,6 +575,11 @@ public OnMapStart()
     CreateTimer(1.0, RespawnDeadPlayersTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     g_bEnoughRespawnPoints = false;
     ResetMapRandomSpawnPoints();
+    CreateTimer(1.0, GetMapRandomSpawnEntitiesTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public Action:GetMapRandomSpawnEntitiesTimer(Handle:hTimer)
+{
     GetMapRandomSpawnEntities();
 }
 
@@ -1049,7 +1054,7 @@ public Action:GenerateRandomSpawns(Handle:hTimer, any:iClient) {
         if(IsRandomSpawnPointValid(faCoord)) {
             new iSpawn = CreateRandomSpawnEntity(faCoord);
             new iSpawnID = TrackRandomSpawnEntity(iSpawn);
-            if(iSpawnID >= 63)
+            if(iSpawnID >= MAXIMUM_SPAWN_POINTS)
                 g_bEnoughRespawnPoints = true;
         }
         return Plugin_Continue;

@@ -1,4 +1,5 @@
 #define MAXIMUM_SPAWN_POINTS    40
+
 new g_iaRandomSpawnEntities[MAXIMUM_SPAWN_POINTS] = {0, ...};
 new g_iRandomSpawns = 0;
 new Float:g_fDistanceBetweenSpawns = 550.0;

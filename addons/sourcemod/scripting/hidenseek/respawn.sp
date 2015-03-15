@@ -85,13 +85,3 @@ public CancelPlayerRespawn(iClient)
         g_haRespawn[iClient] = INVALID_HANDLE;
     }
 }
-
-public RespawnDeadPlayers(Float:fDelay)
-{
-    for(new iClient = 1; iClient < MaxClients; iClient++) {
-        if(IsClientInGame(iClient))
-            if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
-                if(!IsPlayerAlive(iClient))
-                    RespawnPlayerLazy(iClient, fDelay);
-    }
-}

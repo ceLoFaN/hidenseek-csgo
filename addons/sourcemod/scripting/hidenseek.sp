@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.182"
+#define PLUGIN_VERSION                "1.6.201"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"
@@ -603,8 +603,14 @@ public Action:EnableRoundObjectives(Handle:hTimer)
 
 public Action:RespawnDeadPlayersTimer(Handle:hTimer) 
 {
-    if(g_bRespawnMode)
-        RespawnDeadPlayers(g_fBaseRespawnTime);
+    if(g_bRespawnMode) {
+        for(new iClient = 1; iClient < MaxClients; iClient++) {
+            if(IsClientInGame(iClient))
+                if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
+                    if(!IsPlayerAlive(iClient))
+                        RespawnPlayerLazy(iClient, g_fBaseRespawnTime + RespawnPenaltyTime(iClient));
+        }
+    }
     return Plugin_Continue;
 }
 
@@ -834,7 +840,8 @@ public Action:MakeClientVisible(Handle:hTimer, any:iClient)
 {
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     g_haInvisible[iClient] = INVALID_HANDLE;
-    PrintToChat(iClient, "  \x04[HNS] %t", "Invisible Off");
+    if(IsPlayerAlive(iClient))
+        PrintToChat(iClient, "  \x04[HNS] %t", "Invisible Off");
 }
 
 public BreakInvisibility(iClient, iReason)
@@ -966,6 +973,7 @@ public OnClientConnected(iClient)
 {
     g_iConnectedClients++;
     g_iaInitialTeamTrack[iClient] = 0;
+    ResetSuicidePenaltyStacks(iClient);
 }
 
 public OnClientDisconnect(iClient)
@@ -1349,19 +1357,21 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
     new iVictim = GetClientOfUserId(GetEventInt(hEvent, "userid"));
     new iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
 
+    new iVictimTeam = GetClientTeam(iVictim);
+
     if(iVictim > 0 && iVictim <= MaxClients) {
-        new iVictimTeam = GetClientTeam(iVictim);
         if(iVictimTeam == CS_TEAM_T) {
             g_iTerroristsDeathCount++;
             if(iAttacker > 0 && iAttacker <= MaxClients) {
-                if(GetClientTeam(iAttacker) == CS_TEAM_CT) {
+                new iAttackerTeam = GetClientTeam(iAttacker);
+                if(iAttackerTeam == CS_TEAM_CT) {
                     SetEntProp(iAttacker, Prop_Send, "m_iAccount", 0);    //Make sure the player doesn't get the money
                     CS_SetClientContributionScore(iAttacker, CS_GetClientContributionScore(iAttacker) + g_iBonusPointsMultiplier - 1); 
                     decl String:sNickname[MAX_NAME_LENGTH];                    
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
 
-                    RemoveSuicidePenaltyStacks(iVictim);
-                    RemoveSuicidePenaltyStacks(iAttacker);
+                    SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) - 1);
+                    SetSuicidePenaltyStacks(iAttacker, GetSuicidePenaltyStacks(iAttacker) - 1);
                     
                     if(!g_bRespawnMode)
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
@@ -1372,7 +1382,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
 
                         g_baDiedBecauseRespawning[iAttacker] = true;
 
-                        DealDamage(iAttacker, GetEntProp(iAttacker, Prop_Send, "m_iHealth"), 69);
+                        DealDamage(iAttacker, 9999, 69); //this should do the trick
                         SetClientFrags(iVictim, GetClientFrags(iAttacker) + 1);
 
                         CS_SwitchTeam(iAttacker, CS_TEAM_T);
@@ -1380,6 +1390,7 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
                         CS_SwitchTeam(iVictim, CS_TEAM_CT);
                         g_iaInitialTeamTrack[iVictim] = CS_TEAM_CT;
 
+                        CancelPlayerRespawn(iAttacker);
                         RespawnPlayerLazy(iAttacker, 0.0 + RespawnPenaltyTime(iAttacker));
 
                         PrintToChat(iAttacker, "  \x04[HNS] %t", 
@@ -1399,23 +1410,21 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
         if(!(iAssister > 0 && iAssister <= MaxClients)) {
             if(!g_baDiedBecauseRespawning[iVictim]) {
                 SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
-                if(GetClientTeam(iVictim) == CS_TEAM_T)
+                if(iVictimTeam == CS_TEAM_T) {
+                    PrintToServer("The modafucking T died and got %d stack added.", GetSuicidePenaltyStacks(iVictim) + 1);
+                    SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) + 1);
                     g_baAvailableToSwap[iVictim] = true;
+                }
                 if(g_iSuicidePointsPenalty) {
                     CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
                     PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
                 }
             }
         }
-        if(GetClientTeam(iVictim) == CS_TEAM_CT) {
+        if(iVictimTeam == CS_TEAM_CT) {
             if(!g_baDiedBecauseRespawning[iVictim])
                 g_baAvailableToSwap[iVictim] = true;
         }
-        else if(GetClientTeam(iVictim) == CS_TEAM_T) {
-            if(!g_baDiedBecauseRespawning[iVictim])
-                AddSuicidePenaltyStacks(iVictim);
-        }
-        
     }
 
     if(g_bRespawnMode) {

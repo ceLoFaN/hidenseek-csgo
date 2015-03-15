@@ -1,45 +1,34 @@
 new g_iaSuicidePenaltyStacks[MAXPLAYERS + 1] = {0, ...};
 new g_iMaxSuicidePenaltyStacks = 5;
 
-stock AddSuicidePenaltyStacks(iClient, iCount = 1)
+public SetSuicidePenaltyStacks(iClient, iCount)
 {
-    if(iCount < 0)
-        return g_iaSuicidePenaltyStacks[iClient];
-
-    g_iaSuicidePenaltyStacks[iClient] += iCount;
+    g_iaSuicidePenaltyStacks[iClient] = iCount;
     if(g_iaSuicidePenaltyStacks[iClient] > g_iMaxSuicidePenaltyStacks)
         g_iaSuicidePenaltyStacks[iClient] = g_iMaxSuicidePenaltyStacks;
-
-    return g_iaSuicidePenaltyStacks[iClient];
-}
-
-stock RemoveSuicidePenaltyStacks(iClient, iCount = 1)
-{
-    if(iCount < 0)
-        return g_iaSuicidePenaltyStacks[iClient];
-
-    g_iaSuicidePenaltyStacks[iClient] -= iCount;
-    if(g_iaSuicidePenaltyStacks[iClient] < 0)
+    else if(g_iaSuicidePenaltyStacks[iClient] < 0)
         g_iaSuicidePenaltyStacks[iClient] = 0;
 
+    PrintToServer("Client %d now has %d stacks.", iClient, g_iaSuicidePenaltyStacks[iClient]);
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-stock ResetSuicidePenaltyStacks(iClient)
+public ResetSuicidePenaltyStacks(iClient)
 {
     g_iaSuicidePenaltyStacks[iClient] = 0;
 
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-stock GetSuicidePenaltyStacks(iClient)
+public GetSuicidePenaltyStacks(iClient)
 {
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-stock Float:RespawnPenaltyTime(iClient)
+public Float:RespawnPenaltyTime(iClient)
 {
     new iStacks = GetSuicidePenaltyStacks(iClient);
+    PrintToServer("Respawn time for client %d: %f", iClient, float(2 * iStacks * iStacks + 3 * iStacks));
 
-    return Float:(2 * iStacks * iStacks + 3 * iStacks);
+    return float(2 * iStacks * iStacks + 3 * iStacks);
 }

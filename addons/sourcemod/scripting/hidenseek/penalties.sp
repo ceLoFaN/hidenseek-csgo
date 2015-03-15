@@ -9,7 +9,6 @@ public SetSuicidePenaltyStacks(iClient, iCount)
     else if(g_iaSuicidePenaltyStacks[iClient] < 0)
         g_iaSuicidePenaltyStacks[iClient] = 0;
 
-    PrintToServer("Client %d now has %d stacks.", iClient, g_iaSuicidePenaltyStacks[iClient]);
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
@@ -28,7 +27,6 @@ public GetSuicidePenaltyStacks(iClient)
 public Float:RespawnPenaltyTime(iClient)
 {
     new iStacks = GetSuicidePenaltyStacks(iClient);
-    PrintToServer("Respawn time for client %d: %f", iClient, float(2 * iStacks * iStacks + 3 * iStacks));
 
     return float(2 * iStacks * iStacks + 3 * iStacks);
 }

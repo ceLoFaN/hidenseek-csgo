@@ -9,4 +9,3 @@ stock Float:GetPlayerSpeed(iClient)
 
     return fSpeed;
 }
-

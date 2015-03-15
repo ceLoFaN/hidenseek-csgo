@@ -1411,7 +1411,6 @@ public Action:OnPlayerDeath(Handle:hEvent, const String:sName[], bool:bDontBroad
             if(!g_baDiedBecauseRespawning[iVictim]) {
                 SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
                 if(iVictimTeam == CS_TEAM_T) {
-                    PrintToServer("The modafucking T died and got %d stack added.", GetSuicidePenaltyStacks(iVictim) + 1);
                     SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) + 1);
                     g_baAvailableToSwap[iVictim] = true;
                 }
@@ -1814,8 +1813,6 @@ public Action:Unfreeze(Handle:hTimer, any:iClient)
             if(IsPlayerAlive(iClient))
                 PrintToChat(iClient, "  \x04[HNS] %t", "Unfreeze");
         }
-        else
-            PrintToServer("Unfreeze attempted on non frozen client %d.", iClient);
     }
     return Plugin_Continue;
 }

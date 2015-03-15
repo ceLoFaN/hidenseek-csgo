@@ -21,7 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 
-#define PLUGIN_VERSION                "1.6.201"
+#define PLUGIN_VERSION                "2.0.0-beta"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"

@@ -224,43 +224,43 @@
 	"Flashbang"
 	{
 		"en"			"Flashbang"
-		"ru"			"светов"
+		"ru"			"Световая граната"
 	}
 	
 	"Molotov"
 	{
 		"en"			"Molotov"
-		"ru"			"зажигательн"
+		"ru"			"Молотов"
 	}
 	
 	"Smoke Grenade"
 	{
 		"en"			"Smoke Grenade"
-		"ru"			"дымов"
+		"ru"			"Дымовая граната"
 	}
 	
 	"HE Grenade"
 	{
 		"en"			"HE Grenade"
-		"ru"			"осколочн"
+		"ru"			"Осколочная граната"
 	}
 	
 	"Decoy Grenade"
 	{
 		"en"			"Decoy Grenade"
-		"ru"			"ложн"
+		"ru"			"Ложная граната"
 	}
 	
 	"Incendiary Grenade"
 	{
 		"en"			"Incendiary Grenade"
-		"ru"			"зажигательн"
+		"ru"			"Зажигательная граната"
 	}
 	
 	"FrostNade"
 	{
 		"en"			"FrostNade"
-		"ru"			"замораживающ"
+		"ru"			"Замораживающая граната"
 	}
 	
 	"And"
@@ -333,7 +333,7 @@
 	"Spectate Deny Alive"
 	{
 		"en"			"You are not allowed to go spectating while you're alive."
-		"ru"			"Запрещено присоединяться к сперктаторам, пока вы живы."
+		"ru"			"Запрещено присоединяться к наблюдателям, пока вы живы."
 	}
 	
 	"Invalid Team Console"

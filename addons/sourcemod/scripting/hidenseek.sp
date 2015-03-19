@@ -1023,11 +1023,7 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(iTeam == CS_TEAM_CT) {
         // Respawn Protection
         g_baRespawnProtection[iClient] = true;
-        if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
-            KillTimer(g_haRespawnProtectionTimer[iClient]);
-            g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
-        }
-        g_haRespawnProtectionTimer[iClient] = CreateTimer(g_bRespawnMode ? g_fCTRespawnSleepDuration : g_fCountdownTime + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
+        PrintToChat(iClient, "You are protected!");
     }
 
     g_baAvailableToSwap[iClient] = false;
@@ -1110,14 +1106,40 @@ public Action:OnPlayerSpawnDelay(Handle:hTimer, any:iId)
                     new iCountdownTimeFloor = RoundToFloor(g_fCTRespawnSleepDuration);
                     PrintCenterText(iClient, "\n  %t", "Wake Up", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
                     StartRespawnFreezeCountdown(iClient, g_fCTRespawnSleepDuration);
+                    // Respawn Protection
+                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                        KillTimer(g_haRespawnProtectionTimer[iClient]);
+                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                    }
+                    g_haRespawnProtectionTimer[iClient] = CreateTimer(g_fCTRespawnSleepDuration+RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
                 }
             }
             else if(g_fCountdownTime > 0.0 && fDefreezeTime > 0.0 && (fDefreezeTime < g_fCountdownTime + 1.0)) {
-                if(g_iConnectedClients > 1)
+                if(g_iConnectedClients > 1) {
                     Freeze(iClient, fDefreezeTime, COUNTDOWN);
+                    // Respawn Protection
+                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                        KillTimer(g_haRespawnProtectionTimer[iClient]);
+                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                    }
+                    g_haRespawnProtectionTimer[iClient] = CreateTimer(fDefreezeTime+RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
+                } else {
+                    // Respawn Protection
+                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                        KillTimer(g_haRespawnProtectionTimer[iClient]);
+                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                    }
+                    g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
+                }
             }
             else if(GetEntityMoveType(iClient) == MOVETYPE_NONE) {
                 SetEntityMoveType(iClient, MOVETYPE_WALK);
+                // Respawn Protection
+                if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                    KillTimer(g_haRespawnProtectionTimer[iClient]);
+                    g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                }
+                g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
             }
         }    
     }
@@ -1454,10 +1476,10 @@ public Action:OnPlayerFlash(Handle:hEvent, const String:sName[], bool:bDontBroad
             if(g_iFlashBlindDisable == 2 && iTeam == CS_TEAM_SPECTATOR)
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
-	
+    
     if(g_baRespawnProtection[iClient])
         SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
-	
+    
     return Plugin_Continue;
 }
 
@@ -1943,6 +1965,7 @@ public Action:RemoveRespawnProtection(Handle:hTimer, any:iClient) // data = clie
 {
     g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
     g_baRespawnProtection[iClient] = false;
+    PrintToChat(iClient, "You are not protected now!");
 }
 
 public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadcast)
@@ -1951,8 +1974,15 @@ public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadc
     new iClient = GetClientOfUserId(iId);
     new iAttackerId = GetEventInt(hEvent, "attacker");
     new iAttackerClient = GetClientOfUserId(iAttackerId);
+    new String:sWeaponName[64];
+    GetEventString(hEvent, "weapon", sWeaponName, 64);
+    PrintToConsole(iClient, "%s %d Protection %b", sWeaponName, iAttackerClient, g_baRespawnProtection[iClient]);
     
-    if(g_baRespawnProtection[iClient] && iAttackerClient == 0)
-        return Plugin_Handled;
+    if(g_baRespawnProtection[iClient] && iAttackerClient != 0) {
+        PrintToConsole(iClient, "Damage handled!");
+        bDontBroadcast = true
+        return Plugin_Changed;
+    }
+    PrintToConsole(iClient, "Damage not handled!");
     return Plugin_Continue;
 }

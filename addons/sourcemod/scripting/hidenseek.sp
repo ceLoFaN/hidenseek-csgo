@@ -339,11 +339,6 @@ public OnPluginStart()
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
-    //Set some server ConVars
-    for(new i = 0; i < sizeof(g_saPresetConVars); i++)
-    {
-        SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
-    }
     HookConVarChange(g_hEnabled, OnCvarChange);
     HookConVarChange(g_hCountdownTime, OnCvarChange);
     HookConVarChange(g_hCountdownFade, OnCvarChange);
@@ -563,7 +558,13 @@ public OnMapStart()
     
     g_fCountdownOverTime = 0.0;
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
-    
+
+    //Set some server ConVars
+    for(new i = 0; i < sizeof(g_saPresetConVars); i++)
+    {
+        SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
+    }
+
     if(g_bEnabled) {
         SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
     

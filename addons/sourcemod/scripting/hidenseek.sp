@@ -1033,7 +1033,6 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(iTeam == CS_TEAM_CT) {
         // Respawn Protection
         g_baRespawnProtection[iClient] = true;
-        PrintToChat(iClient, "You are protected!");
     }
 
     g_baAvailableToSwap[iClient] = false;
@@ -1947,6 +1946,8 @@ public Action:RemoveRadar(Handle:hTimer, any:iClient)
 {
     if (!g_bHideRadar)
         return;
+	if (!IsClientInGame(iClient))
+		return;
     if(StrContains(g_sGameDirName, "csgo") != -1)
         SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
     else
@@ -1988,7 +1989,6 @@ public Action:RemoveRespawnProtection(Handle:hTimer, any:iClient) // data = clie
 {
     g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
     g_baRespawnProtection[iClient] = false;
-    PrintToChat(iClient, "You are not protected now!");
 }
 
 public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadcast)

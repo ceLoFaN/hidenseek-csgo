@@ -123,44 +123,44 @@ public Plugin myinfo =
     url = "steamcommunity.com/id/celofan"
 };
 
-Handle g_hEnabled = INVALID_HANDLE;
-Handle g_hCountdownTime = INVALID_HANDLE;
-Handle g_hCountdownFade = INVALID_HANDLE;
-Handle g_hRoundPoints = INVALID_HANDLE;
-Handle g_hBonusPointsMultiplier = INVALID_HANDLE;
-Handle g_hMaximumWinStreak = INVALID_HANDLE;
-Handle g_hFlashbangChance = INVALID_HANDLE;
-Handle g_hMolotovChance = INVALID_HANDLE;
-Handle g_hSmokeGrenadeChance = INVALID_HANDLE;
-Handle g_hDecoyChance = INVALID_HANDLE;
-Handle g_hHEGrenadeChance = INVALID_HANDLE;
-Handle g_hFlashbangMaximumAmount = INVALID_HANDLE;
-Handle g_hMolotovMaximumAmount = INVALID_HANDLE;
-Handle g_hSmokeGrenadeMaximumAmount = INVALID_HANDLE;
-Handle g_hDecoyMaximumAmount = INVALID_HANDLE;
-Handle g_hHEGrenadeMaximumAmount = INVALID_HANDLE;
-Handle g_hFlashBlindDisable = INVALID_HANDLE;
-Handle g_hBlockJoinTeam = INVALID_HANDLE;
-Handle g_hFrostNades = INVALID_HANDLE;
-Handle g_hSelfFreeze = INVALID_HANDLE;
-Handle g_hAttackWhileFrozen = INVALID_HANDLE;
-Handle g_hFreezeGlow = INVALID_HANDLE;
-Handle g_hFreezeDuration = INVALID_HANDLE;
-Handle g_hFreezeFade = INVALID_HANDLE;
-Handle g_hFrostNadesTrail = INVALID_HANDLE;
-Handle g_hFreezeRadius = INVALID_HANDLE;
-Handle g_hFrostNadesDetonationRing = INVALID_HANDLE;
-Handle g_hBlockConsoleKill = INVALID_HANDLE;
-Handle g_hSuicidePointsPenalty = INVALID_HANDLE;
-Handle g_hMolotovFriendlyFire = INVALID_HANDLE;
-Handle g_hRespawnMode = INVALID_HANDLE;
-Handle g_hBaseRespawnTime = INVALID_HANDLE;
-Handle g_hInvisibilityDuration = INVALID_HANDLE;
-Handle g_hCTRespawnSleepDuration = INVALID_HANDLE;
-Handle g_hInvisibilityBreakDistance = INVALID_HANDLE;
-Handle g_hHideRadar = INVALID_HANDLE;
-Handle g_hRespawnRoundDuration = INVALID_HANDLE;
-Handle g_hWelcomeMessage = INVALID_HANDLE;
+ConVar g_hEnabled;
+ConVar g_hCountdownTime;
+ConVar g_hCountdownFade;
+ConVar g_hRoundPoints;
+ConVar g_hBonusPointsMultiplier;
+ConVar g_hMaximumWinStreak;
+ConVar g_hFlashbangChance;
+ConVar g_hMolotovChance;
+ConVar g_hSmokeGrenadeChance;
+ConVar g_hDecoyChance;
+ConVar g_hHEGrenadeChance;
+ConVar g_hFlashbangMaximumAmount;
+ConVar g_hMolotovMaximumAmount;
+ConVar g_hSmokeGrenadeMaximumAmount;
+ConVar g_hDecoyMaximumAmount;
+ConVar g_hHEGrenadeMaximumAmount;
+ConVar g_hFlashBlindDisable;
+ConVar g_hBlockJoinTeam;
+ConVar g_hFrostNades;
+ConVar g_hSelfFreeze;
+ConVar g_hAttackWhileFrozen;
+ConVar g_hFreezeGlow;
+ConVar g_hFreezeDuration;
+ConVar g_hFreezeFade;
+ConVar g_hFrostNadesTrail;
+ConVar g_hFreezeRadius;
+ConVar g_hFrostNadesDetonationRing;
+ConVar g_hBlockConsoleKill;
+ConVar g_hSuicidePointsPenalty;
+ConVar g_hMolotovFriendlyFire;
+ConVar g_hRespawnMode;
+ConVar g_hBaseRespawnTime;
+ConVar g_hInvisibilityDuration;
+ConVar g_hCTRespawnSleepDuration;
+ConVar g_hInvisibilityBreakDistance;
+ConVar g_hHideRadar;
+ConVar g_hRespawnRoundDuration;
+ConVar g_hWelcomeMessage;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -344,46 +344,46 @@ public void OnPluginStart()
     //Set some server ConVars
     for(int i = 0; i < sizeof(g_saPresetConVars); i++)
     {
-        SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
+        FindConVar(g_saPresetConVars[i]).IntValue = g_iaDefaultValues[i];
     }
-    HookConVarChange(g_hEnabled, OnCvarChange);
-    HookConVarChange(g_hCountdownTime, OnCvarChange);
-    HookConVarChange(g_hCountdownFade, OnCvarChange);
-    HookConVarChange(g_hRoundPoints, OnCvarChange);
-    HookConVarChange(g_hBonusPointsMultiplier, OnCvarChange);
-    HookConVarChange(g_hMaximumWinStreak, OnCvarChange);
-    HookConVarChange(g_hFlashbangChance, OnCvarChange);
-    HookConVarChange(g_hMolotovChance, OnCvarChange);
-    HookConVarChange(g_hSmokeGrenadeChance, OnCvarChange);
-    HookConVarChange(g_hDecoyChance, OnCvarChange);
-    HookConVarChange(g_hHEGrenadeChance, OnCvarChange);
-    HookConVarChange(g_hFlashbangMaximumAmount, OnCvarChange);
-    HookConVarChange(g_hMolotovMaximumAmount, OnCvarChange);
-    HookConVarChange(g_hSmokeGrenadeMaximumAmount, OnCvarChange);
-    HookConVarChange(g_hDecoyMaximumAmount, OnCvarChange);
-    HookConVarChange(g_hHEGrenadeMaximumAmount, OnCvarChange);
-    HookConVarChange(g_hFlashBlindDisable, OnCvarChange);
-    HookConVarChange(g_hBlockJoinTeam, OnCvarChange);
-    HookConVarChange(g_hFrostNades, OnCvarChange);
-    HookConVarChange(g_hSelfFreeze, OnCvarChange);
-    HookConVarChange(g_hAttackWhileFrozen, OnCvarChange);
-    HookConVarChange(g_hFreezeDuration, OnCvarChange);
-    HookConVarChange(g_hFreezeFade, OnCvarChange);
-    HookConVarChange(g_hFreezeGlow, OnCvarChange);
-    HookConVarChange(g_hFrostNadesTrail, OnCvarChange);
-    HookConVarChange(g_hFreezeRadius, OnCvarChange);
-    HookConVarChange(g_hFrostNadesDetonationRing, OnCvarChange);
-    HookConVarChange(g_hBlockConsoleKill, OnCvarChange);
-    HookConVarChange(g_hSuicidePointsPenalty, OnCvarChange);
-    HookConVarChange(g_hMolotovFriendlyFire, OnCvarChange);
-    HookConVarChange(g_hRespawnMode, OnCvarChange);
-    HookConVarChange(g_hBaseRespawnTime, OnCvarChange);
-    HookConVarChange(g_hInvisibilityDuration, OnCvarChange);
-    HookConVarChange(g_hInvisibilityBreakDistance, OnCvarChange);
-    HookConVarChange(g_hCTRespawnSleepDuration, OnCvarChange);
-    HookConVarChange(g_hHideRadar, OnCvarChange);
-    HookConVarChange(g_hRespawnRoundDuration, OnCvarChange);
-    HookConVarChange(g_hWelcomeMessage, OnCvarChange);
+    g_hEnabled.AddChangeHook(OnCvarChange);
+    g_hCountdownTime.AddChangeHook(OnCvarChange);
+    g_hCountdownFade.AddChangeHook(OnCvarChange);
+    g_hRoundPoints.AddChangeHook(OnCvarChange);
+    g_hBonusPointsMultiplier.AddChangeHook(OnCvarChange);
+    g_hMaximumWinStreak.AddChangeHook(OnCvarChange);
+    g_hFlashbangChance.AddChangeHook(OnCvarChange);
+    g_hMolotovChance.AddChangeHook(OnCvarChange);
+    g_hSmokeGrenadeChance.AddChangeHook(OnCvarChange);
+    g_hDecoyChance.AddChangeHook(OnCvarChange);
+    g_hHEGrenadeChance.AddChangeHook(OnCvarChange);
+    g_hFlashbangMaximumAmount.AddChangeHook(OnCvarChange);
+    g_hMolotovMaximumAmount.AddChangeHook(OnCvarChange);
+    g_hSmokeGrenadeMaximumAmount.AddChangeHook(OnCvarChange);
+    g_hDecoyMaximumAmount.AddChangeHook(OnCvarChange);
+    g_hHEGrenadeMaximumAmount.AddChangeHook(OnCvarChange);
+    g_hFlashBlindDisable.AddChangeHook(OnCvarChange);
+    g_hBlockJoinTeam.AddChangeHook(OnCvarChange);
+    g_hFrostNades.AddChangeHook(OnCvarChange);
+    g_hSelfFreeze.AddChangeHook(OnCvarChange);
+    g_hAttackWhileFrozen.AddChangeHook(OnCvarChange);
+    g_hFreezeDuration.AddChangeHook(OnCvarChange);
+    g_hFreezeFade.AddChangeHook(OnCvarChange);
+    g_hFreezeGlow.AddChangeHook(OnCvarChange);
+    g_hFrostNadesTrail.AddChangeHook(OnCvarChange);
+    g_hFreezeRadius.AddChangeHook(OnCvarChange);
+    g_hFrostNadesDetonationRing.AddChangeHook(OnCvarChange);
+    g_hBlockConsoleKill.AddChangeHook(OnCvarChange);
+    g_hSuicidePointsPenalty.AddChangeHook(OnCvarChange);
+    g_hMolotovFriendlyFire.AddChangeHook(OnCvarChange);
+    g_hRespawnMode.AddChangeHook(OnCvarChange);
+    g_hBaseRespawnTime.AddChangeHook(OnCvarChange);
+    g_hInvisibilityDuration.AddChangeHook(OnCvarChange);
+    g_hInvisibilityBreakDistance.AddChangeHook(OnCvarChange);
+    g_hCTRespawnSleepDuration.AddChangeHook(OnCvarChange);
+    g_hHideRadar.AddChangeHook(OnCvarChange);
+    g_hRespawnRoundDuration.AddChangeHook(OnCvarChange);
+    g_hWelcomeMessage.AddChangeHook(OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -419,65 +419,65 @@ public void OnPluginStart()
 
 public void OnConfigsExecuted()
 {
-    g_bEnabled = GetConVarBool(g_hEnabled);
-    g_bRespawnMode = GetConVarBool(g_hRespawnMode);
-    g_iRespawnRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
+    g_bEnabled = g_hEnabled.BoolValue;
+    g_bRespawnMode = g_hRespawnMode.BoolValue;
+    g_iRespawnRoundDuration = g_hRespawnRoundDuration.IntValue;
     GameModeSetup();
-    g_fCountdownTime = GetConVarFloat(g_hCountdownTime);
-    g_bCountdownFade = GetConVarBool(g_hCountdownFade);
+    g_fCountdownTime = g_hCountdownTime.FloatValue;
+    g_bCountdownFade = g_hCountdownFade.BoolValue;
 
-    g_iRoundPoints = GetConVarInt(g_hRoundPoints);
-    g_iBonusPointsMultiplier = GetConVarInt(g_hBonusPointsMultiplier);
-    g_iMaximumWinStreak = GetConVarInt(g_hMaximumWinStreak); 
-    g_fBaseRespawnTime = GetConVarFloat(g_hBaseRespawnTime);
-    g_fInvisibilityDuration = GetConVarFloat(g_hInvisibilityDuration);
-    g_fInvisibilityBreakDistance = GetConVarFloat(g_hInvisibilityBreakDistance) + 64.0;
-    g_fCTRespawnSleepDuration = GetConVarFloat(g_hCTRespawnSleepDuration);
-    g_bHideRadar = GetConVarBool(g_hHideRadar);
-    g_bWelcomeMessage = GetConVarBool(g_hWelcomeMessage);
+    g_iRoundPoints = g_hRoundPoints.IntValue;
+    g_iBonusPointsMultiplier = g_hBonusPointsMultiplier.IntValue;
+    g_iMaximumWinStreak = g_hMaximumWinStreak.IntValue; 
+    g_fBaseRespawnTime = g_hBaseRespawnTime.FloatValue;
+    g_fInvisibilityDuration = g_hInvisibilityDuration.FloatValue;
+    g_fInvisibilityBreakDistance = g_hInvisibilityBreakDistance.FloatValue + 64.0;
+    g_fCTRespawnSleepDuration = g_hCTRespawnSleepDuration.FloatValue;
+    g_bHideRadar = g_hHideRadar.BoolValue;
+    g_bWelcomeMessage = g_hWelcomeMessage.BoolValue;
     
-    g_faGrenadeChance[NADE_FLASHBANG] = GetConVarFloat(g_hFlashbangChance);
-    g_faGrenadeChance[NADE_MOLOTOV] = GetConVarFloat(g_hMolotovChance);
-    g_faGrenadeChance[NADE_SMOKE] = GetConVarFloat(g_hSmokeGrenadeChance);
-    g_faGrenadeChance[NADE_DECOY] = GetConVarFloat(g_hDecoyChance);
-    g_faGrenadeChance[NADE_HE] = GetConVarFloat(g_hHEGrenadeChance);
-    g_iaGrenadeMaximumAmounts[NADE_FLASHBANG] = GetConVarInt(g_hFlashbangMaximumAmount);
-    g_iaGrenadeMaximumAmounts[NADE_MOLOTOV] = GetConVarInt(g_hMolotovMaximumAmount);
-    g_iaGrenadeMaximumAmounts[NADE_SMOKE] = GetConVarInt(g_hSmokeGrenadeMaximumAmount);
-    g_iaGrenadeMaximumAmounts[NADE_DECOY] = GetConVarInt(g_hDecoyMaximumAmount);
-    g_iaGrenadeMaximumAmounts[NADE_HE] = GetConVarInt(g_hHEGrenadeMaximumAmount);
+    g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
+    g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
+    g_faGrenadeChance[NADE_SMOKE] = g_hSmokeGrenadeChance.FloatValue;
+    g_faGrenadeChance[NADE_DECOY] = g_hDecoyChance.FloatValue;
+    g_faGrenadeChance[NADE_HE] = g_hHEGrenadeChance.FloatValue;
+    g_iaGrenadeMaximumAmounts[NADE_FLASHBANG] = g_hFlashbangMaximumAmount.IntValue;
+    g_iaGrenadeMaximumAmounts[NADE_MOLOTOV] = g_hMolotovMaximumAmount.IntValue;
+    g_iaGrenadeMaximumAmounts[NADE_SMOKE] = g_hSmokeGrenadeMaximumAmount.IntValue;
+    g_iaGrenadeMaximumAmounts[NADE_DECOY] = g_hDecoyMaximumAmount.IntValue;
+    g_iaGrenadeMaximumAmounts[NADE_HE] = g_hHEGrenadeMaximumAmount.IntValue;
     
-    g_iFlashBlindDisable = GetConVarInt(g_hFlashBlindDisable);
-    g_bBlockJoinTeam = GetConVarBool(g_hBlockJoinTeam);
-    g_bFrostNades = GetConVarBool(g_hFrostNades);
-    g_bSelfFreeze = GetConVarBool(g_hSelfFreeze);
-    g_fFreezeRadius = GetConVarFloat(g_hFreezeRadius);
-    g_bAttackWhileFrozen = GetConVarBool(g_hAttackWhileFrozen);
-    g_fFreezeDuration = GetConVarFloat(g_hFreezeDuration);
-    g_bFreezeFade = GetConVarBool(g_hFreezeFade);
-    g_bFreezeGlow = GetConVarBool(g_hFreezeGlow);
-    g_bFrostNadesDetonationRing = GetConVarBool(g_hFrostNadesDetonationRing);
-    g_bFrostNadesTrail = GetConVarBool(g_hFrostNadesTrail);
-    g_bBlockConsoleKill = GetConVarBool(g_hBlockConsoleKill);
-    g_iSuicidePointsPenalty = GetConVarInt(g_hSuicidePointsPenalty);
-    g_bMolotovFriendlyFire = GetConVarBool(g_hMolotovFriendlyFire);
+    g_iFlashBlindDisable = g_hFlashBlindDisable.IntValue;
+    g_bBlockJoinTeam = g_hBlockJoinTeam.BoolValue;
+    g_bFrostNades = g_hFrostNades.BoolValue;
+    g_bSelfFreeze = g_hSelfFreeze.BoolValue;
+    g_fFreezeRadius = g_hFreezeRadius.FloatValue;
+    g_bAttackWhileFrozen = g_hAttackWhileFrozen.BoolValue;
+    g_fFreezeDuration = g_hFreezeDuration.FloatValue;
+    g_bFreezeFade = g_hFreezeFade.BoolValue;
+    g_bFreezeGlow = g_hFreezeGlow.BoolValue;
+    g_bFrostNadesDetonationRing = g_hFrostNadesDetonationRing.BoolValue;
+    g_bFrostNadesTrail = g_hFrostNadesTrail.BoolValue;
+    g_bBlockConsoleKill = g_hBlockConsoleKill.BoolValue;
+    g_iSuicidePointsPenalty = g_hSuicidePointsPenalty.IntValue;
+    g_bMolotovFriendlyFire = g_hMolotovFriendlyFire.BoolValue;
 }
 
-public void OnCvarChange(Handle hConVar, const char[] sOldValue, const char[] sNewValue)
+public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sNewValue)
 {
     char sConVarName[64];
-    GetConVarName(hConVar, sConVarName, sizeof(sConVarName));
+    hConVar.GetName(sConVarName, sizeof(sConVarName));
 
     if(StrEqual("hns_enabled", sConVarName)) {
-        if(g_bEnabled != GetConVarBool(hConVar)) {
-            g_bEnabled = GetConVarBool(hConVar);
+        if(g_bEnabled != hConVar.BoolValue) {
+            g_bEnabled = hConVar.BoolValue;
             GameModeSetup();
         }
     } else
     if(StrEqual("hns_countdown_time", sConVarName))
         g_fCountdownTime = StringToFloat(sNewValue); else
     if(StrEqual("hns_countdown_fade", sConVarName))
-        g_bCountdownFade = GetConVarBool(hConVar); else
+        g_bCountdownFade = hConVar.BoolValue; else
     if(StrEqual("hns_round_points", sConVarName))
         g_iRoundPoints = StringToInt(sNewValue); else
     if(StrEqual("hns_bonus_points_multiplier", sConVarName))
@@ -507,49 +507,49 @@ public void OnCvarChange(Handle hConVar, const char[] sOldValue, const char[] sN
     if(StrEqual("hns_flash_blind_disable", sConVarName))
         g_iFlashBlindDisable = StringToInt(sNewValue); else
     if(StrEqual("hns_attack_while_frozen", sConVarName))
-        g_bAttackWhileFrozen = GetConVarBool(hConVar); else
+        g_bAttackWhileFrozen = hConVar.BoolValue; else
     if(StrEqual("hns_frostnades", sConVarName))
-        g_bFrostNades = GetConVarBool(hConVar); else
+        g_bFrostNades = hConVar.BoolValue; else
     if(StrEqual("hns_self_freeze", sConVarName))
-        g_bSelfFreeze = GetConVarBool(hConVar); else
+        g_bSelfFreeze = hConVar.BoolValue; else
     if(StrEqual("hns_freeze_glow", sConVarName))
-        g_bFreezeGlow = GetConVarBool(hConVar); else
+        g_bFreezeGlow = hConVar.BoolValue; else
     if(StrEqual("hns_freeze_duration", sConVarName))
         g_fFreezeDuration = StringToFloat(sNewValue); else
     if(StrEqual("hns_freeze_fade", sConVarName))
-        g_bFreezeFade = GetConVarBool(hConVar); else
+        g_bFreezeFade = hConVar.BoolValue; else
     if(StrEqual("hns_frostnades_trail", sConVarName))
-        g_bFrostNadesTrail = GetConVarBool(hConVar); else
+        g_bFrostNadesTrail = hConVar.BoolValue; else
     if(StrEqual("hns_freeze_radius", sConVarName))
         g_fFreezeRadius = StringToFloat(sNewValue); else
     if(StrEqual("hns_frostnades_detonation_ring", sConVarName))
-        g_bFrostNadesDetonationRing = GetConVarBool(hConVar); else
+        g_bFrostNadesDetonationRing = hConVar.BoolValue; else
     if(StrEqual("hns_block_console_kill", sConVarName))
-        g_bBlockConsoleKill = GetConVarBool(hConVar); else
+        g_bBlockConsoleKill = hConVar.BoolValue; else
     if(StrEqual("hns_suicide_points_penalty", sConVarName))
         g_iSuicidePointsPenalty = StringToInt(sNewValue); else
     if(StrEqual("hns_molotov_friendly_fire", sConVarName))
-        g_bMolotovFriendlyFire = GetConVarBool(hConVar); else
+        g_bMolotovFriendlyFire = hConVar.BoolValue; else
     if(StrEqual("hns_respawn_mode", sConVarName)) {
-        if(g_bRespawnMode != GetConVarBool(hConVar)) {
-            g_bRespawnMode = GetConVarBool(hConVar);
+        if(g_bRespawnMode != hConVar.BoolValue) {
+            g_bRespawnMode = hConVar.BoolValue;
             GameModeSetup();
         }
     } else
     if(StrEqual("hns_base_respawn_time", sConVarName))
-        g_fBaseRespawnTime = GetConVarFloat(hConVar); else
+        g_fBaseRespawnTime = hConVar.FloatValue; else
     if(StrEqual("hns_respawn_invisibility_duration", sConVarName))
-        g_fInvisibilityDuration = GetConVarFloat(hConVar); else
+        g_fInvisibilityDuration = hConVar.FloatValue; else
     if(StrEqual("hns_invisibility_break_distance", sConVarName))
-        g_fInvisibilityBreakDistance = GetConVarFloat(hConVar) + 64.0; else
+        g_fInvisibilityBreakDistance = hConVar.FloatValue + 64.0; else
     if(StrEqual("hns_ct_respawn_sleep_duration", sConVarName))
-        g_fCTRespawnSleepDuration = GetConVarFloat(hConVar); else
+        g_fCTRespawnSleepDuration = hConVar.FloatValue; else
     if (StrEqual("hns_hide_radar", sConVarName))
-        g_bHideRadar = GetConVarBool(hConVar); else
+        g_bHideRadar = hConVar.BoolValue; else
     if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
-        g_iRespawnRoundDuration = GetConVarInt(hConVar); else
+        g_iRespawnRoundDuration = hConVar.IntValue; else
     if (StrEqual("hns_welcome_message", sConVarName))
-        g_bWelcomeMessage = GetConVarBool(hConVar);
+        g_bWelcomeMessage = hConVar.BoolValue;
 }
 
 public void OnMapStart()
@@ -566,7 +566,7 @@ public void OnMapStart()
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
     
     if(g_bEnabled) {
-        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
+        FindConVar("mp_autoteambalance").IntValue = 1; // this need to be changed for RM
     
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
@@ -599,7 +599,7 @@ public void OnMapTimeLeftChanged()
 
 public Action EnableRoundObjectives(Handle hTimer)
 {
-    SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+    FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
     g_hRoundTimer = INVALID_HANDLE;
 }
 
@@ -636,7 +636,7 @@ public void OnMapEnd()
         g_hRoundTimer = INVALID_HANDLE;
     }
     if(g_bRespawnMode) {
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
     }
 }
 
@@ -1136,37 +1136,37 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
 }
 
 public void GameModeSetup() {
-    SetConVarInt(FindConVar("mp_randomspawn"), g_bEnabled && g_bRespawnMode);
+    FindConVar("mp_randomspawn").BoolValue = g_bEnabled && g_bRespawnMode;
     if(g_bEnabled && g_bRespawnMode) {
         if(!g_iRoundDuration) {
-            g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
+            g_iRoundDuration = FindConVar("mp_roundtime").IntValue;
             if(!g_iRoundDuration)
-                g_iRoundDuration = GetConVarInt(g_hRespawnRoundDuration);
+                g_iRoundDuration = g_iRespawnRoundDuration;
         }
         if(!g_iMapRounds) {
-            g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));
+            g_iMapRounds = FindConVar("mp_maxrounds").IntValue;
         }
         if(!g_iMapTimelimit) {
-            g_iMapTimelimit = GetConVarInt(FindConVar("mp_timelimit"));
+            g_iMapTimelimit = FindConVar("mp_timelimit").IntValue;
         }
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
-        SetConVarInt(FindConVar("mp_maxrounds"), 1);
-        SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_death_drop_gun").IntValue = 0;
+        FindConVar("mp_death_drop_grenade").IntValue = 0;
+        FindConVar("mp_maxrounds").IntValue = 1;
+        FindConVar("mp_timelimit").IntValue = g_iRespawnRoundDuration;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
         SetRoundTime(g_iRespawnRoundDuration, true);
         for(int iClient = 0; iClient < MaxClients; iClient++) {
             ResetSuicidePenaltyStacks(iClient);
         }
     }
     else {
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+        FindConVar("mp_death_drop_gun").IntValue = 1;
+        FindConVar("mp_death_drop_grenade").IntValue = 1;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
         if(g_iMapRounds)
-            SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
+            FindConVar("mp_maxrounds").IntValue = g_iMapRounds;
         if(g_iMapTimelimit)
-            SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
+            FindConVar("mp_timelimit").IntValue = g_iMapTimelimit;
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
         if(g_hRoundTimer != INVALID_HANDLE) {
@@ -1223,7 +1223,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
     if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
         return Plugin_Continue;
 
-    int iLimitTeams = GetConVarInt(FindConVar("mp_limitteams"));
+    int iLimitTeams = FindConVar("mp_limitteams").IntValue;
     int iDelta = GetTeamPlayerCount(CS_TEAM_T) - GetTeamPlayerCount(CS_TEAM_CT);
     if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
         if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND) {
@@ -1724,11 +1724,11 @@ stock void RemoveBombsites()
 
 stock void SetRoundTime(int iTime, bool bRestartRound = false)
 {
-    SetConVarInt(FindConVar("mp_roundtime_defuse"), 0);
-    SetConVarInt(FindConVar("mp_roundtime_hostage"), 0);
-    SetConVarInt(FindConVar("mp_roundtime"), iTime);
+    FindConVar("mp_roundtime_defuse").IntValue = 0;
+    FindConVar("mp_roundtime_hostage").IntValue = 0;
+    FindConVar("mp_roundtime").IntValue = iTime;
     if(bRestartRound)
-        SetConVarInt(FindConVar("mp_restartgame"), 1);
+        FindConVar("mp_restartgame").IntValue = 1;
 }
 
 stock bool IsWeaponKnife(const char[] sWeaponName)

@@ -1946,6 +1946,8 @@ public Action:RemoveRadar(Handle:hTimer, any:iClient)
 {
     if (!g_bHideRadar)
         return;
+	if (!IsClientInGame(iClient))
+		return;
     if(StrContains(g_sGameDirName, "csgo") != -1)
         SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
     else

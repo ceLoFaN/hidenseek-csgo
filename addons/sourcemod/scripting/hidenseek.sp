@@ -396,6 +396,7 @@ public OnPluginStart()
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
+    AddCommandListener(Command_Kill, "explode");
     AddCommandListener(Command_Spectate, "spectate");
 
     g_fGrenadeSpeedMultiplier = 250.0 / 245.0;

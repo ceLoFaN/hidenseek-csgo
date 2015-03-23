@@ -1002,13 +1002,13 @@ public OnClientDisconnect(iClient)
         g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
     g_baToggleKnife[iClient] = true;
-	
-	// Respawn Protection
-	if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
-		KillTimer(g_haRespawnProtectionTimer[iClient]);
-		g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
-		g_baRespawnProtection[iClient] = false;
-	}
+    
+    // Respawn Protection
+    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haRespawnProtectionTimer[iClient]);
+        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        g_baRespawnProtection[iClient] = false;
+    }
 }
 
 public Action:OnWeaponCanUse(iClient, iWeapon)

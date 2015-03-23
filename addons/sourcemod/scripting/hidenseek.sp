@@ -203,7 +203,7 @@ int g_iMapRounds = 0;
 Handle g_hRoundTimer = INVALID_HANDLE;
 Handle g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 bool g_bEnoughRespawnPoints = false;
-int g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
+bool g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
 Handle g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars
@@ -1003,6 +1003,14 @@ public void OnClientDisconnect(int iClient)
         g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
     g_baToggleKnife[iClient] = true;
+    
+   
+    // Respawn Protection
+    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haRespawnProtectionTimer[iClient]);
+        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        g_baRespawnProtection[iClient] = false;
+    }
 }
 
 public Action OnWeaponCanUse(int iClient, int iWeapon)
@@ -1480,10 +1488,10 @@ public Action OnPlayerFlash(Handle hEvent, const char[] sName, bool bDontBroadca
             if(g_iFlashBlindDisable == 2 && iTeam == CS_TEAM_SPECTATOR)
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
-	
+    
     if(g_baRespawnProtection[iClient])
         SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
-	
+    
     return Plugin_Continue;
 }
 
@@ -1925,6 +1933,8 @@ void DealDamage(int iVictim, int iDamage, int iAttacker = 0, int iDmgType = DMG_
 public Action RemoveRadar(Handle hTimer, any iClient)
 {
     if (!g_bHideRadar)
+        return;
+    if (!IsClientInGame(iClient))
         return;
     if(StrContains(g_sGameDirName, "csgo") != -1)
         SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);

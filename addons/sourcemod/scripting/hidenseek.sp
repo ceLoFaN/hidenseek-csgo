@@ -201,7 +201,7 @@ new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
 new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new bool:g_bEnoughRespawnPoints = false;
-new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
+new bool:g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
 new Handle:g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars    
@@ -1002,6 +1002,13 @@ public OnClientDisconnect(iClient)
         g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
     g_baToggleKnife[iClient] = true;
+    
+    // Respawn Protection
+    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+        KillTimer(g_haRespawnProtectionTimer[iClient]);
+        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        g_baRespawnProtection[iClient] = false;
+    }
 }
 
 public Action:OnWeaponCanUse(iClient, iWeapon)
@@ -1033,7 +1040,6 @@ public Action:OnPlayerSpawn(Handle:hEvent, const String:sName[], bool:bDontBroad
     if(iTeam == CS_TEAM_CT) {
         // Respawn Protection
         g_baRespawnProtection[iClient] = true;
-        PrintToChat(iClient, "You are protected!");
     }
 
     g_baAvailableToSwap[iClient] = false;
@@ -1947,6 +1953,8 @@ public Action:RemoveRadar(Handle:hTimer, any:iClient)
 {
     if (!g_bHideRadar)
         return;
+    if (!IsClientInGame(iClient))
+        return;
     if(StrContains(g_sGameDirName, "csgo") != -1)
         SetEntProp(iClient, Prop_Send, "m_iHideHUD", GetEntProp(iClient, Prop_Send, "m_iHideHUD") | HIDE_RADAR_CSGO);
     else
@@ -1988,7 +1996,6 @@ public Action:RemoveRespawnProtection(Handle:hTimer, any:iClient) // data = clie
 {
     g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
     g_baRespawnProtection[iClient] = false;
-    PrintToChat(iClient, "You are not protected now!");
 }
 
 public Action:OnPlayerHurt(Handle:hEvent, const String:sName[], bool:bDontBroadcast)

@@ -201,7 +201,7 @@ new g_iMapRounds = 0;
 new Handle:g_hRoundTimer = INVALID_HANDLE;
 new Handle:g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new bool:g_bEnoughRespawnPoints = false;
-new g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
+new bool:g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
 new Handle:g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 //Roundstart vars    
@@ -1002,6 +1002,13 @@ public OnClientDisconnect(iClient)
         g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
     g_baToggleKnife[iClient] = true;
+	
+	// Respawn Protection
+	if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+		KillTimer(g_haRespawnProtectionTimer[iClient]);
+		g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+		g_baRespawnProtection[iClient] = false;
+	}
 }
 
 public Action:OnWeaponCanUse(iClient, iWeapon)

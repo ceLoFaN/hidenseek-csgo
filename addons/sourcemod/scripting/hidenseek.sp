@@ -640,10 +640,10 @@ public void OnMapEnd()
     }
 }
 
-public Action OnRoundStart(Handle hEvent, const char[] sName, bool dontBroadcast)
+public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
 {
     if(!g_bEnabled)
-        return Plugin_Continue;
+        return;
 
     g_bBombFound = false;
     
@@ -664,7 +664,7 @@ public Action OnRoundStart(Handle hEvent, const char[] sName, bool dontBroadcast
         if(!g_bRespawnMode)
             g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
     }
-    return Plugin_Continue;
+    return;
 }
 
 public Action StartCountdown(Handle hTimer)
@@ -714,9 +714,9 @@ public Action ShowCountdownMessage(Handle hTimer, any iTarget)
     }
 }
 
-public void OnWeaponFire(Handle hEvent, const char[] name, bool dontBroadcast)
+public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
 {
-    int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
+    int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
     int iWeapon = GetEntPropEnt(iClient, Prop_Data, "m_hActiveWeapon"); 
     if(IsValidEntity(iWeapon)) {
         char sWeaponName[64];
@@ -1026,11 +1026,11 @@ public Action OnWeaponCanUse(int iClient, int iWeapon)
     return Plugin_Continue;
 }
 
-public Action OnPlayerSpawn(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
     if(!g_bEnabled)
-        return Plugin_Continue;
-    int iId = GetEventInt(hEvent, "userid");
+        return;
+    int iId =  hEvent.GetInt("userid");
     int iClient = GetClientOfUserId(iId);
     int iTeam = GetClientTeam(iClient);
 
@@ -1063,7 +1063,7 @@ public Action OnPlayerSpawn(Handle hEvent, const char[] sName, bool bDontBroadca
     if(!g_bEnoughRespawnPoints)
         g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
     
-    return Plugin_Continue;
+    return;
 }
 
 public Action GenerateRandomSpawns(Handle hTimer, any iClient) {
@@ -1293,22 +1293,22 @@ public Action Command_Kill(int iClient, const char[] sCommand, int iArgCount)
     return Plugin_Stop;
 }
 
-public Action OnItemPickUp(Handle hEvent, const char[] szName, bool bDontBroadcast)
+public void OnItemPickUp(Event hEvent, const char[] szName, bool bDontBroadcast)
 {
     if(!g_bEnabled)
-        return Plugin_Continue;
+        return;
     char sItem[64];
-    int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    GetEventString(hEvent, "item", sItem, sizeof(sItem));
+    int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
+    hEvent.GetString("item", sItem, sizeof(sItem));
     if(!g_bBombFound)
         if(StrEqual(sItem, "weapon_c4", false)) {
             RemovePlayerItem(iClient, GetPlayerWeaponSlot(iClient, 4));    //Remove the bomb
             g_bBombFound = true;
-            return Plugin_Continue;
+            return;
         }
     for(int i = 0; i < 2; i++)
         RemoveWeaponBySlot(iClient, i);
-    return Plugin_Continue;
+    return;
 }
 
 public void OnWeaponSwitchPost(int iClient, int iWeapon)
@@ -1359,13 +1359,13 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
     return Plugin_Continue;
 }
 
-public Action OnPlayerDeath(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
     if(!g_bEnabled)
-        return Plugin_Continue;
-    int iAttacker = GetClientOfUserId(GetEventInt(hEvent, "attacker"));
-    int iVictim = GetClientOfUserId(GetEventInt(hEvent, "userid"));
-    int iAssister = GetClientOfUserId(GetEventInt(hEvent, "assister"));
+        return;
+    int iAttacker = GetClientOfUserId(hEvent.GetInt("attacker"));
+    int iVictim = GetClientOfUserId(hEvent.GetInt("userid"));
+    int iAssister = GetClientOfUserId(hEvent.GetInt("assister"));
 
     int iVictimTeam = GetClientTeam(iVictim);
 
@@ -1442,7 +1442,7 @@ public Action OnPlayerDeath(Handle hEvent, const char[] sName, bool bDontBroadca
             RespawnPlayerLazy(iVictim, g_fBaseRespawnTime + RespawnPenaltyTime(iVictim));
         }
     }
-    return Plugin_Continue;
+    return;
 }
 
 public void TrySwapPlayers(int iClient) 
@@ -1474,11 +1474,11 @@ public void TrySwapPlayers(int iClient)
     }
 }
 
-public Action OnPlayerFlash(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public Action OnPlayerFlash(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
     if(!g_bEnabled)
         return Plugin_Continue;
-    int iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
+    int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
     int iTeam = GetClientTeam(iClient);
     
     if(g_iFlashBlindDisable) {
@@ -1542,11 +1542,11 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
     return Plugin_Continue;
 }
 
-public Action OnRoundEnd(Handle hEvent, const char[] name, bool dontBroadcast)
+public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
 {
     if(!g_bEnabled)
-        return Plugin_Continue;
-    int iWinningTeam = GetEventInt(hEvent, "winner");
+        return;
+    int iWinningTeam = hEvent.GetInt("winner");
     int iCTScore = CS_GetTeamScore(CS_TEAM_CT);
     int iPoints;
     
@@ -1600,7 +1600,7 @@ public Action OnRoundEnd(Handle hEvent, const char[] name, bool dontBroadcast)
         CS_SetTeamScore(CS_TEAM_T, iCTScore);
         SetTeamScore(CS_TEAM_T, iCTScore);
     }
-    return Plugin_Continue;
+    return;
 }
 
 stock void RemoveNades(int iClient)
@@ -1945,9 +1945,9 @@ public Action RemoveRadar(Handle hTimer, any iClient)
         }
 }
 
-public void OnPlayerFlash_Post(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void OnPlayerFlash_Post(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
-    int iId = GetEventInt(hEvent, "userid");
+    int iId = hEvent.GetInt("userid");
     int iClient = GetClientOfUserId(iId);
     if(iClient && GetClientTeam(iClient) > CS_TEAM_SPECTATOR) {
         float fDuration = GetEntPropFloat(iClient, Prop_Send, "m_flFlashDuration");
@@ -1955,9 +1955,9 @@ public void OnPlayerFlash_Post(Handle hEvent, const char[] sName, bool bDontBroa
     }
 }
 
-public void OnPlayerTeam(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void OnPlayerTeam(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
-    int iId = GetEventInt(hEvent, "userid");
+    int iId = hEvent.GetInt("userid");
     int iClient = GetClientOfUserId(iId);
     if(!g_bEnabled) {
         g_baWelcomeMsgShown[iClient] = true;
@@ -1979,11 +1979,11 @@ public Action RemoveRespawnProtection(Handle hTimer, any iClient)
     g_baRespawnProtection[iClient] = false;
 }
 
-public Action OnPlayerHurt(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
-    int iId = GetEventInt(hEvent, "userid");
+    int iId = hEvent.GetInt("userid");
     int iClient = GetClientOfUserId(iId);
-    int iAttackerId = GetEventInt(hEvent, "attacker");
+    int iAttackerId = hEvent.GetInt("attacker");
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
     if(g_baRespawnProtection[iClient] && iAttackerClient == 0)

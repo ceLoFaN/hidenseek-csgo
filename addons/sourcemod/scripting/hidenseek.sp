@@ -725,23 +725,24 @@ public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
             int i;
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             int iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
-            Handle hPack = CreateDataPack();
+            DataPack hPack = new DataPack();
             if(g_haInvisible[iClient] != INVALID_HANDLE) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
-            WritePackCell(hPack, iClient);
-            WritePackCell(hPack, iWeapon);
-            WritePackCell(hPack, iCount);
+            hPack.WriteCell(iClient);
+            hPack.WriteCell(iWeapon);
+            hPack.WriteCell(iCount);
         }
     }
 }
 
-public Action SwapToNade(Handle hTimer, Handle hPack)
+public Action SwapToNade(Handle hTimer, DataPack hPack)
 {
-    ResetPack(hPack);
-    int iClient = ReadPackCell(hPack);
-    int iWeaponThrown = ReadPackCell(hPack);
-    int count = ReadPackCell(hPack);
+    hPack.Reset();
+    int iClient = hPack.ReadCell();
+    int iWeaponThrown = hPack.ReadCell();
+    int count = hPack.ReadCell();
+    delete hPack;
     if(!IsClientInGame(iClient))
         return Plugin_Continue;
     int iWeaponTemp = -1;

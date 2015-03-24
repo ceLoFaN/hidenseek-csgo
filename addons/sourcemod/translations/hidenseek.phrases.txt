@@ -332,7 +332,7 @@
 	"Spectate Deny Alive"
 	{
 		"en"			"You are not allowed to go spectating while you're alive."
-		"ru"			"Запрещено присоединяться к сперктаторам, пока вы живы."
+		"ru"			"Запрещено присоединяться к наблюдателям, пока вы живы."
 	}
 	
 	"Invalid Team Console"
@@ -344,6 +344,6 @@
 	"Kill Deny"
 	{
 		"en"			"You are not allowed to suicide."
-		"ru"			"Вам запрещено использовать эту команду."
+		"ru"			"Вам запрещено совершать самоубийство."
 	}
 }

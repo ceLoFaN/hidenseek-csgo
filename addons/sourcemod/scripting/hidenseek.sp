@@ -2016,10 +2016,8 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
     if(g_baRespawnProtection[iClient] && iAttackerClient != 0) {
-        PrintToConsole(iClient, "Damage handled!");
         bDontBroadcast = true
         return Plugin_Changed;
     }
-    PrintToConsole(iClient, "Damage not handled!");
     return Plugin_Continue;
 }

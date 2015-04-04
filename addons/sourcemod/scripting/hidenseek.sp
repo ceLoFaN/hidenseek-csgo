@@ -561,16 +561,16 @@ public void OnMapStart()
     PrecacheSound(SOUND_UNFREEZE);
     PrecacheSound(SOUND_FROSTNADE_EXPLODE);
     PrecacheSound(SOUND_GOGOGO);
-	
-	if (!g_iaGrenadeOffsets[0]) {
-		int end = sizeof(g_saGrenadeWeaponNames);
-		for (int i=0; i<end; i++) {
-			int entindex = CreateEntityByName(g_saGrenadeWeaponNames[i]);
-			DispatchSpawn(entindex);
-			g_iaGrenadeOffsets[i] = GetEntProp(entindex, Prop_Send, "m_iPrimaryAmmoType");
-			AcceptEntityInput(entindex, "Kill");
-		}
-	}
+    
+    if (!g_iaGrenadeOffsets[0]) {
+        int end = sizeof(g_saGrenadeWeaponNames);
+        for (int i=0; i<end; i++) {
+            int entindex = CreateEntityByName(g_saGrenadeWeaponNames[i]);
+            DispatchSpawn(entindex);
+            g_iaGrenadeOffsets[i] = GetEntProp(entindex, Prop_Send, "m_iPrimaryAmmoType");
+            AcceptEntityInput(entindex, "Kill");
+        }
+    }
     
     g_fCountdownOverTime = 0.0;
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;

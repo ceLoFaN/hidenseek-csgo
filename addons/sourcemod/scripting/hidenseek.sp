@@ -2032,13 +2032,13 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     int iAttackerId = hEvent.GetInt("attacker");
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
-    if(g_baRespawnProtection[iClient] && iAttackerClient != 0) {
+    if(g_baRespawnProtection[iVictimClient] && iAttackerClient != 0) {
         bDontBroadcast = true
         return Plugin_Changed;
     }
 
     if(!g_bDamageSlowdown)
-        SetEntPropFloat(iVictimId, Prop_Send, "m_flVelocityModifier", 1.0);
+        SetEntPropFloat(iVictimClient, Prop_Send, "m_flVelocityModifier", 1.0);
 
     return Plugin_Continue;
 }

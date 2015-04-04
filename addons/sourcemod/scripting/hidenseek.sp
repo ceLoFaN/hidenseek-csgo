@@ -567,7 +567,7 @@ public void OnMapStart()
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
 
     //Set some server ConVars
-    for(new i = 0; i < sizeof(g_saPresetConVars); i++)
+    for(int i = 0; i < sizeof(g_saPresetConVars); i++)
     {
         SetConVarInt(FindConVar(g_saPresetConVars[i]), g_iaDefaultValues[i], true);
     }

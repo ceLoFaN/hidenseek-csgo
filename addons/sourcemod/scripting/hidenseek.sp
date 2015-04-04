@@ -23,7 +23,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION                "2.0.0-beta"
+#define PLUGIN_VERSION                "2.0.0-beta2"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"
@@ -64,6 +64,7 @@
 #define MOLOTOV_FRIENDLY_FIRE         "0"
 #define HIDE_RADAR                    "1"
 #define WELCOME_MESSAGE               "1"
+#define DAMAGE_SLOWDOWN               "0"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -161,6 +162,7 @@ ConVar g_hInvisibilityBreakDistance;
 ConVar g_hHideRadar;
 ConVar g_hRespawnRoundDuration;
 ConVar g_hWelcomeMessage;
+ConVar g_hDamageSlowdown;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -192,6 +194,7 @@ float g_fInvisibilityBreakDistance;
 bool g_bHideRadar;
 int g_iRespawnRoundDuration;
 bool g_bWelcomeMessage;
+bool g_bDamageSlowdown;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -338,6 +341,7 @@ public void OnPluginStart()
     g_hHideRadar = CreateConVar("hns_hide_radar", HIDE_RADAR, "Hide radar (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hRespawnRoundDuration = CreateConVar("hns_respawn_mode_roundtime", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
     g_hWelcomeMessage = CreateConVar("hns_welcome_message", WELCOME_MESSAGE, "Displays a welcome message when a player first joins a team (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hDamageSlowdown = CreateConVar("hns_damage_slowdown", DAMAGE_SLOWDOWN, "Toggles the slowdown from getting damage (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -384,6 +388,7 @@ public void OnPluginStart()
     g_hHideRadar.AddChangeHook(OnCvarChange);
     g_hRespawnRoundDuration.AddChangeHook(OnCvarChange);
     g_hWelcomeMessage.AddChangeHook(OnCvarChange);
+    g_hDamageSlowdown.AddChangeHook(OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -436,6 +441,7 @@ public void OnConfigsExecuted()
     g_fCTRespawnSleepDuration = g_hCTRespawnSleepDuration.FloatValue;
     g_bHideRadar = g_hHideRadar.BoolValue;
     g_bWelcomeMessage = g_hWelcomeMessage.BoolValue;
+    g_bDamageSlowdown = g_hDamageSlowdown.BoolValue;
     
     g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
     g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
@@ -550,7 +556,9 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_respawn_mode_roundtime", sConVarName))
         g_iRespawnRoundDuration = hConVar.IntValue; else
     if (StrEqual("hns_welcome_message", sConVarName))
-        g_bWelcomeMessage = hConVar.BoolValue;
+        g_bWelcomeMessage = hConVar.BoolValue; else
+    if (StrEqual("hns_damage_slowdown", sConVarName))
+        g_bDamageSlowdown = hConVar.BoolValue;
 }
 
 public void OnMapStart()
@@ -2010,8 +2018,8 @@ public Action RemoveRespawnProtection(Handle hTimer, any iClient)
 
 public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
-    int iId = hEvent.GetInt("userid");
-    int iClient = GetClientOfUserId(iId);
+    int iVictimId = hEvent.GetInt("userid");
+    int iVictimClient = GetClientOfUserId(iVictimId);
     int iAttackerId = hEvent.GetInt("attacker");
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
@@ -2019,5 +2027,9 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
         bDontBroadcast = true
         return Plugin_Changed;
     }
+
+    if(!g_bDamageSlowdown)
+        SetEntPropFloat(iVictimId, Prop_Send, "m_flVelocityModifier", 1.0);
+
     return Plugin_Continue;
 }

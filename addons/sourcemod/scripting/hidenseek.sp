@@ -255,7 +255,7 @@ char g_saGrenadeChatNames[][] = {
     "Decoy Grenade",
     "Incendiary Grenade"
 };
-int g_iaGrenadeOffsets[] = {15, 17, 16, 14, 18, 17};
+int g_iaGrenadeOffsets[sizeof(g_saGrenadeWeaponNames)];
 
 //Add your Preset ConVars here!
 char g_saPresetConVars[][] = {
@@ -561,6 +561,16 @@ public void OnMapStart()
     PrecacheSound(SOUND_UNFREEZE);
     PrecacheSound(SOUND_FROSTNADE_EXPLODE);
     PrecacheSound(SOUND_GOGOGO);
+	
+	if (!g_iaGrenadeOffsets[0]) {
+		int end = sizeof(g_saGrenadeWeaponNames);
+		for (int i=0; i<end; i++) {
+			int entindex = CreateEntityByName(g_saGrenadeWeaponNames[i]);
+			DispatchSpawn(entindex);
+			g_iaGrenadeOffsets[i] = GetEntProp(entindex, Prop_Send, "m_iPrimaryAmmoType");
+			AcceptEntityInput(entindex, "Kill");
+		}
+	}
     
     g_fCountdownOverTime = 0.0;
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
@@ -742,7 +752,6 @@ public Action SwapToNade(Handle hTimer, DataPack hPack)
     int iClient = hPack.ReadCell();
     int iWeaponThrown = hPack.ReadCell();
     int count = hPack.ReadCell();
-    delete hPack;
     if(!IsClientInGame(iClient))
         return Plugin_Continue;
     int iWeaponTemp = -1;

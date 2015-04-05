@@ -20,6 +20,7 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <cstrike>
+#include <adminmenu>
 
 #pragma newdecls required
 
@@ -228,6 +229,7 @@ int g_iHaloSprite;
 //Pluginstart vars
 float g_fGrenadeSpeedMultiplier;
 char g_sGameDirName[10];
+TopMenu g_AdminMenu;
 
 //Realtime vars
   //frostnades
@@ -416,6 +418,10 @@ public void OnPluginStart()
     GetGameFolderName(g_sGameDirName, 10);
     if(StrContains(g_sGameDirName, "cstrike") != -1)
         HookEvent("player_blind", OnPlayerFlash_Post);
+    
+    TopMenu topmenu;
+    if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
+        OnAdminMenuReady(topmenu);
 }
 
 public void OnConfigsExecuted()
@@ -584,7 +590,7 @@ public void OnMapStart()
         ServerCommand("sm_cvar %s %d", g_saPresetConVars[i], g_iaDefaultValues[i]);
 
     if(g_bEnabled) {
-        FindConVar("mp_autoteambalance").IntValue = 1; // this need to be changed for RM
+        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
     
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
@@ -617,7 +623,7 @@ public void OnMapTimeLeftChanged()
 
 public Action EnableRoundObjectives(Handle hTimer)
 {
-    ServerCommand("sm_cvar mp_ignore_round_win_conditions 0");
+    SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
     g_hRoundTimer = INVALID_HANDLE;
 }
 
@@ -654,7 +660,7 @@ public void OnMapEnd()
         g_hRoundTimer = INVALID_HANDLE;
     }
     if(g_bRespawnMode) {
-        ServerCommand("sm_cvar mp_ignore_round_win_conditions 1");
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
     }
 }
 
@@ -1183,37 +1189,37 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
 }
 
 public void GameModeSetup() {
-    FindConVar("mp_randomspawn").BoolValue = g_bEnabled && g_bRespawnMode;
+    SetConVarBool(FindConVar("mp_randomspawn"), g_bEnabled && g_bRespawnMode);
     if(g_bEnabled && g_bRespawnMode) {
         if(!g_iRoundDuration) {
-            g_iRoundDuration = FindConVar("mp_roundtime").IntValue;
+            g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
             if(!g_iRoundDuration)
                 g_iRoundDuration = g_iRespawnRoundDuration;
         }
         if(!g_iMapRounds) {
-            g_iMapRounds = FindConVar("mp_maxrounds").IntValue;
+            g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));
         }
         if(!g_iMapTimelimit) {
-            g_iMapTimelimit = FindConVar("mp_timelimit").IntValue;
+            g_iMapTimelimit = GetConVarInt(FindConVar("mp_timelimit"));
         }
-        ServerCommand("sm_cvar mp_maxrounds 1");
-        ServerCommand("sm_cvar mp_timelimit %d", g_iRespawnRoundDuration);
-        ServerCommand("sm_cvar mp_death_drop_gun 0");
-        ServerCommand("sm_cvar mp_death_drop_grenade 0");
-        ServerCommand("sm_cvar mp_ignore_round_win_conditions 1");
+        SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
+        SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
+        SetConVarInt(FindConVar("mp_maxrounds"), 1);
+        SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
         SetRoundTime(g_iRespawnRoundDuration, true);
         for(int iClient = 0; iClient < MaxClients; iClient++) {
             ResetSuicidePenaltyStacks(iClient);
         }
     }
     else {
-        ServerCommand("sm_cvar mp_death_drop_gun 1");
-        ServerCommand("sm_cvar mp_death_drop_grenade 1");
-        ServerCommand("sm_cvar mp_ignore_round_win_conditions 0");
+        SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
+        SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
+        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
         if(g_iMapRounds)
-            ServerCommand("sm_cvar mp_maxrounds %d", g_iMapRounds);
+            SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
         if(g_iMapTimelimit)
-            ServerCommand("sm_cvar mp_timelimit %d", g_iMapTimelimit)
+            SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
         if(g_hRoundTimer != INVALID_HANDLE) {
@@ -1771,11 +1777,11 @@ stock void RemoveBombsites()
 
 stock void SetRoundTime(int iTime, bool bRestartRound = false)
 {
-    ServerCommand("sm_cvar mp_roundtime_defuse %d", 0);
-    ServerCommand("sm_cvar mp_roundtime_hostage %d", 0);
-    ServerCommand("sm_cvar mp_roundtime %d", 0);
+    SetConVarInt(FindConVar("mp_roundtime_defuse"), 0);
+    SetConVarInt(FindConVar("mp_roundtime_hostage"), 0);
+    SetConVarInt(FindConVar("mp_roundtime"), iTime);
     if(bRestartRound)
-        ServerCommand("sm_cvar mp_restartgame %d", 1);
+        SetConVarInt(FindConVar("mp_restartgame"), 1);
 }
 
 stock bool IsWeaponKnife(const char[] sWeaponName)
@@ -2034,4 +2040,38 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
         SetEntPropFloat(iVictimClient, Prop_Send, "m_flVelocityModifier", 1.0);
 
     return Plugin_Continue;
+}
+
+public int OnAdminMenuReady(Handle topmenu)
+{
+    TopMenu AdminMenu = TopMenu.FromHandle(topmenu);
+    if (AdminMenu == g_AdminMenu)
+        return;
+    g_AdminMenu = AdminMenu;
+    
+    TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
+    g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
+}
+
+public void TopMenuHandler_HNSCategory(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
+{
+    if (action == TopMenuAction_DisplayTitle) {
+        Format(buffer, maxlength, "HideNSeek");
+    } else if (action == TopMenuAction_DisplayOption) {
+        Format(buffer, maxlength, "HideNSeek");
+    }
+}
+
+public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
+{
+    if (action == TopMenuAction_DisplayOption) {
+        Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
+    } 
+    else if (action == TopMenuAction_SelectOption) {
+        PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
+        SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
+//      char mapname[128];
+//      GetCurrentMap(mapname, 128);
+//        
+    }
 }

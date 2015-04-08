@@ -349,7 +349,7 @@
 	
 	"Kill Deny"
 	{
-		"en"			"You are not allowed to suicide."
-		"ru"			"Вам запрещено совершать самоубийство."
+		"en"			"You are not allowed to use the kill command."
+		"ru"			"Вам запрещено использовать эту команду."
 	}
 }

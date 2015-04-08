@@ -1,5 +1,5 @@
 int g_iaSuicidePenaltyStacks[MAXPLAYERS + 1] = {0, ...};
-int g_iMaxSuicidePenaltyStacks = 4;
+int g_iMaxSuicidePenaltyStacks = 5;
 
 public int SetSuicidePenaltyStacks(int iClient, int iCount)
 {
@@ -28,5 +28,5 @@ public float RespawnPenaltyTime(int iClient)
 {
     int iStacks = GetSuicidePenaltyStacks(iClient);
 
-    return view_as<float>(8 * iStacks + 4 / iStacks);
+    return view_as<float>(2 * iStacks * iStacks + 3 * iStacks);
 }

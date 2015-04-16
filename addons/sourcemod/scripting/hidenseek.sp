@@ -73,6 +73,8 @@
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
 #define RESPAWN_ROUND_DURATION        "25"
+#define LOAD_SPAWNS_FROM_FILE         "1"
+#define SAVE_SPAWNS_TO_FILE           "1"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -164,6 +166,8 @@ ConVar g_hHideRadar;
 ConVar g_hRespawnRoundDuration;
 ConVar g_hWelcomeMessage;
 ConVar g_hDamageSlowdown;
+ConVar g_hLoadSpawnPointsFromFile;
+ConVar g_hSaveSpawnPointsToFile;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -196,6 +200,8 @@ bool g_bHideRadar;
 int g_iRespawnRoundDuration;
 bool g_bWelcomeMessage;
 bool g_bDamageSlowdown;
+bool g_bLoadSpawnPointsFromFile;
+int g_iSaveSpawnPointsToFile;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -209,6 +215,7 @@ Handle g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 bool g_bEnoughRespawnPoints = false;
 bool g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
 Handle g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+bool g_bLoadedSpawnPoints = false;
 
 //Roundstart vars
 float g_fRoundStartTime;    // Records the time when the round started
@@ -344,6 +351,8 @@ public void OnPluginStart()
     g_hRespawnRoundDuration = CreateConVar("hns_respawn_mode_roundtime", RESPAWN_ROUND_DURATION, "The duration of a round in respawn mode", _, true, 0.0, true, 60.0);
     g_hWelcomeMessage = CreateConVar("hns_welcome_message", WELCOME_MESSAGE, "Displays a welcome message when a player first joins a team (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hDamageSlowdown = CreateConVar("hns_damage_slowdown", DAMAGE_SLOWDOWN, "Toggles the slowdown from getting damage (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hLoadSpawnPointsFromFile = CreateConVar("hns_rm_load_respawn_points_from_file", LOAD_SPAWNS_FROM_FILE, "Load respawn points from file, if available (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hSaveSpawnPointsToFile = CreateConVar("hns_rm_save_respawn_points_to_file", SAVE_SPAWNS_TO_FILE, "Save respawn points to file (0=DSBL, 1=ENBL, 2=ENBL&Override)", _, true, 0.0, true, 2.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -386,6 +395,8 @@ public void OnPluginStart()
     g_hRespawnRoundDuration.AddChangeHook(OnCvarChange);
     g_hWelcomeMessage.AddChangeHook(OnCvarChange);
     g_hDamageSlowdown.AddChangeHook(OnCvarChange);
+    g_hLoadSpawnPointsFromFile.AddChangeHook(OnCvarChange);
+    g_hSaveSpawnPointsToFile.AddChangeHook(OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -440,6 +451,9 @@ public void OnConfigsExecuted()
     g_fInvisibilityDuration = g_hInvisibilityDuration.FloatValue;
     g_fInvisibilityBreakDistance = g_hInvisibilityBreakDistance.FloatValue + 64.0;
     g_fCTRespawnSleepDuration = g_hCTRespawnSleepDuration.FloatValue;
+    g_bLoadSpawnPointsFromFile = g_hLoadSpawnPointsFromFile.BoolValue;
+    g_iSaveSpawnPointsToFile = g_hSaveSpawnPointsToFile.IntValue;
+
     g_bHideRadar = g_hHideRadar.BoolValue;
     g_bWelcomeMessage = g_hWelcomeMessage.BoolValue;
     g_bDamageSlowdown = g_hDamageSlowdown.BoolValue;
@@ -559,7 +573,11 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_welcome_message", sConVarName))
         g_bWelcomeMessage = hConVar.BoolValue; else
     if (StrEqual("hns_damage_slowdown", sConVarName))
-        g_bDamageSlowdown = hConVar.BoolValue;
+        g_bDamageSlowdown = hConVar.BoolValue; else
+    if (StrEqual("hns_rm_save_respawn_points_to_file", sConVarName))
+        g_iSaveSpawnPointsToFile = hConVar.IntValue; else
+    if (StrEqual("hns_rm_load_respawn_points_from_file", sConVarName))
+        g_bLoadSpawnPointsFromFile = hConVar.BoolValue;
 }
 
 public void OnMapStart()
@@ -601,8 +619,15 @@ public void OnMapStart()
 
     CreateTimer(1.0, RespawnDeadPlayersTimer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
     g_bEnoughRespawnPoints = false;
-    ResetMapRandomSpawnPoints();
-    CreateTimer(1.0, GetMapRandomSpawnEntitiesTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+    g_bLoadedSpawnPoints = false;
+
+    if(g_bLoadSpawnPointsFromFile)
+        g_bLoadedSpawnPoints = LoadSpawnPointsFromFile(true);
+
+    if(!g_bLoadedSpawnPoints) {
+        ResetMapRandomSpawnPoints();
+        CreateTimer(1.0, GetMapRandomSpawnEntitiesTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+    }
 }
 
 public Action GetMapRandomSpawnEntitiesTimer(Handle hTimer)
@@ -662,6 +687,8 @@ public void OnMapEnd()
     if(g_bRespawnMode) {
         SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
     }
+    if(g_iSaveSpawnPointsToFile)
+        SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile > 1);
 }
 
 public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
@@ -1079,14 +1106,14 @@ public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
         KillTimer(g_haSpawnGenerateTimer[iClient]);
         g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
     }
-    if(!g_bEnoughRespawnPoints)
+    if(!g_bEnoughRespawnPoints || !g_bLoadedSpawnPoints)
         g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
     
     return;
 }
 
 public Action GenerateRandomSpawns(Handle hTimer, any iClient) {
-    if(IsPlayerAlive(iClient) && CanPlayerGenerateRandomSpawn(iClient)) {
+    if(!g_bEnoughRespawnPoints && IsPlayerAlive(iClient) && CanPlayerGenerateRandomSpawn(iClient)) {
         float faCoord[3];
         GetClientAbsOrigin(iClient, faCoord);
         if(IsRandomSpawnPointValid(faCoord)) {
@@ -1102,8 +1129,6 @@ public Action GenerateRandomSpawns(Handle hTimer, any iClient) {
         return Plugin_Stop;
     }
 }
-
-
 
 public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
 {
@@ -1153,7 +1178,7 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
                         KillTimer(g_haRespawnProtectionTimer[iClient]);
                         g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
                     }
-                    g_haRespawnProtectionTimer[iClient] = CreateTimer(g_fCTRespawnSleepDuration+RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
+                    g_haRespawnProtectionTimer[iClient] = CreateTimer(g_fCTRespawnSleepDuration + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
                 }
             }
             else if(g_fCountdownTime > 0.0 && fDefreezeTime > 0.0 && (fDefreezeTime < g_fCountdownTime + 1.0)) {

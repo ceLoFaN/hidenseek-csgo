@@ -285,7 +285,8 @@ char g_saPresetConVars[][] = {
     "ammo_grenade_limit_flashbang",
     "ammo_grenade_limit_total",
     "sv_staminajumpcost",
-    "sv_staminalandcost"
+    "sv_staminalandcost",
+    "mp_spectators_max"
 };
 int g_iaDefaultValues[] = {
     100,      // sv_airaccelerate
@@ -303,6 +304,7 @@ int g_iaDefaultValues[] = {
     9999,     // ammo_grenade_limit_total
     0,        // sv_staminajumpcost
     0,        // sv_staminalandcost
+    64,       // mp_spectators_max
 };
 
 public void OnPluginStart()
@@ -840,6 +842,27 @@ public Action Command_ToggleKnife(int iClient, int args)
     return Plugin_Handled;
 }
 
+public bool PlayerCanDisappear(int iClient) 
+{
+    int iClientTeam = GetClientTeam(iClient);
+    for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
+        if(IsClientInGame(iTarget)) {
+            int iTargetTeam = GetClientTeam(iTarget);
+            if(iClientTeam != iTargetTeam && iTargetTeam != CS_TEAM_SPECTATOR) {
+                float faTargetCoord[3];
+                float faClientCoord[3];
+                GetClientAbsOrigin(iTarget, faTargetCoord);
+                GetClientAbsOrigin(iClient, faClientCoord);
+                if(GetVectorDistance(faTargetCoord, faClientCoord) <= 500) {
+                    PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Enemy Near");
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 public Action Command_Respawn(int iClient, int args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
@@ -850,24 +873,10 @@ public Action Command_Respawn(int iClient, int args)
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
             PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted In Flight");
         else {
-            int iClientTeam = GetClientTeam(iClient);
-            for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
-                if(IsClientInGame(iTarget)) {
-                    int iTargetTeam = GetClientTeam(iTarget);
-                    if(iClientTeam != iTargetTeam && iTargetTeam != CS_TEAM_SPECTATOR) {
-                        float faTargetCoord[3];
-                        float faClientCoord[3];
-                        GetClientAbsOrigin(iTarget, faTargetCoord);
-                        GetClientAbsOrigin(iClient, faClientCoord);
-                        if(GetVectorDistance(faTargetCoord, faClientCoord) <= 500) {
-                            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Enemy Near");
-                            return Plugin_Handled;
-                        }
-                    }
-                }
+            if(PlayerCanDisappear(iClient)) {
+                Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
+                RespawnPlayerLazy(iClient, g_fBaseRespawnTime + RespawnPenaltyTime(iClient));
             }
-            Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
-            RespawnPlayerLazy(iClient, g_fBaseRespawnTime + RespawnPenaltyTime(iClient));
         }
     }
     return Plugin_Handled;
@@ -1271,15 +1280,25 @@ public Action Command_Spectate(int iClient, const char[] sCommand, int iArgCount
         return Plugin_Continue;
 
     int iTeam = GetClientTeam(iClient);
-    if(iTeam == CS_TEAM_CT || CS_TEAM_T) {
-        if(IsPlayerAlive(iClient)) {
-            PrintToConsole(iClient, "  \x04[HNS] %t", "Spectate Deny Alive");
-            return Plugin_Stop;
-        }
-        else {
-            g_iaInitialTeamTrack[iClient] = iTeam;
-            SilentUnfreeze(iClient);
-            return Plugin_Continue;
+    if(g_bRespawnMode) {
+        if(iTeam == CS_TEAM_T)
+            if(PlayerCanDisappear(iClient)) {
+                PrintToChat(iClient, "  \x04[HNS] %t", "Spectate Pending", 5.0, "s");
+                CreateTimer(5.0, MovePlayerToSpectators, iClient, TIMER_FLAG_NO_MAPCHANGE);
+                return Plugin_Handled;
+            }
+    }
+    else {
+        if(iTeam == CS_TEAM_CT || CS_TEAM_T) {
+            if(IsPlayerAlive(iClient)) {
+                PrintToConsole(iClient, "  \x04[HNS] %t", "Spectate Deny Alive");
+                return Plugin_Stop;
+            }
+            else {
+                g_iaInitialTeamTrack[iClient] = iTeam;
+                SilentUnfreeze(iClient);
+                return Plugin_Continue;
+            }
         }
     }
     return Plugin_Continue;
@@ -1319,14 +1338,23 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
             }
         }
         else if(iChosenTeam == JOINTEAM_SPEC) {
-            if(IsPlayerAlive(iClient)) {
-                PrintToConsole(iClient, "  \x04[HNS] %T", "Spectate Deny Alive", iClient);
-                return Plugin_Stop;
+            if(g_bRespawnMode) {
+                if(PlayerCanDisappear(iClient)) {
+                    PrintToChat(iClient, "  \x04[HNS] %t", "Spectate Pending", 5.0, "s");
+                    CreateTimer(5.0, MovePlayerToSpectators, iClient, TIMER_FLAG_NO_MAPCHANGE);
+                    return Plugin_Handled;
+                }
             }
             else {
-                g_iaInitialTeamTrack[iClient] = iTeam;
-                SilentUnfreeze(iClient);
-                return Plugin_Continue;
+                if(IsPlayerAlive(iClient)) {
+                    PrintToConsole(iClient, "  \x04[HNS] %T", "Spectate Deny Alive", iClient);
+                    return Plugin_Stop;
+                }
+                else {
+                    g_iaInitialTeamTrack[iClient] = iTeam;
+                    SilentUnfreeze(iClient);
+                    return Plugin_Continue;
+                }
             }
         }
         else {
@@ -1878,6 +1906,11 @@ stock void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
         ScreenFade(iClient, FFADE_IN|FFADE_PURGE|FFADE_MODULATE, FREEZE_COLOR, 2, RoundToFloor(fDuration - 0.5));
     else if(iType == COUNTDOWN && g_bCountdownFade)
         ScreenFade(iClient, FFADE_IN|FFADE_PURGE, COUNTDOWN_COLOR, 2, RoundToFloor(fDuration));
+}
+
+public Action MovePlayerToSpectators(Handle hTimer, any iClient) {
+    CS_SwitchTeam(iClient, CS_TEAM_SPECTATOR);
+    DealDamage(iClient, 9999, 69);
 }
 
 public Action Unfreeze(Handle hTimer, any iClient)

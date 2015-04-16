@@ -108,9 +108,9 @@ stock bool MapEqual(const char[] map, const char[] map2)
  *
  * @return 			Array index, or -1 on failure
  */
-stock FindMapStringInMapArray(ArrayList array, const char[] map)
+stock int FindMapStringInMapArray(ArrayList array, const char[] map)
 {
-	for (new i = 0; i < array.Length; i++)
+	for (int i = 0; i < array.Length; i++)
 	{
 		char arrayMap[PLATFORM_MAX_PATH];
 		array.GetString(i, arrayMap, sizeof(arrayMap));

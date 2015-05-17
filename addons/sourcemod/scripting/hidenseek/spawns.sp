@@ -106,6 +106,7 @@ public bool LoadSpawnPointsFromFile(bool bOverride)
 
     // parsing one line at a time until the end of the file
     char sLine[128];
+    int iCount = 0;
     while(!IsEndOfFile(hFileHandle) && ReadFileLine(hFileHandle, sLine, sizeof(sLine))) {
         char saCoords[6][20];
         ExplodeString(sLine, " ", saCoords, sizeof(saCoords), sizeof(saCoords[]));
@@ -116,6 +117,7 @@ public bool LoadSpawnPointsFromFile(bool bOverride)
 
         int iEntity = CreateRandomSpawnEntity(faOrigin);
         TrackRandomSpawnEntity(iEntity);
+        iCount++;
     }
 
     if(hFileHandle != INVALID_HANDLE) {
@@ -123,9 +125,15 @@ public bool LoadSpawnPointsFromFile(bool bOverride)
         hFileHandle = INVALID_HANDLE;
     }
 
-    if(g_iRandomSpawns)
+    if(iCount){
+        PrintToServer("There are %d spawnpoint%s, of which %d have been loaded from %s.", 
+            g_iRandomSpawns, (g_iRandomSpawns > 1) ? "s" : "", iCount, sSpawnsPath);
         return true;
-    return false;
+    }
+    else {
+        PrintToServer("No spawnpoints have been loaded from %s.", sSpawnsPath);
+        return false;
+    }
 }
 
 public bool SaveSpawnPointsToFile(bool bOverride)
@@ -144,10 +152,12 @@ public bool SaveSpawnPointsToFile(bool bOverride)
     Handle hFileHandle = OpenFile(sSpawnsPath, "w");
 
     int iEntity = -1;
+    int iCount = 0;
     while((iEntity = FindEntityByClassname(iEntity, "info_deathmatch_spawn")) != -1) {
         float faCoord[3];
         GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", faCoord);
         WriteFileLine(hFileHandle, "%f %f %f", faCoord[0], faCoord[1], faCoord[2]);
+        iCount++;
     }
 
     if(hFileHandle != INVALID_HANDLE) {
@@ -155,7 +165,15 @@ public bool SaveSpawnPointsToFile(bool bOverride)
         hFileHandle = INVALID_HANDLE;
     }
 
-    return true;
+    if(iCount) {
+        PrintToServer("%d spawnpoint%s have been written to %s.", 
+            iCount, (iCount > 1) ? "s" : "", sSpawnsPath);
+        return true
+    }
+    else {
+        PrintToServer("No spawnpoints have been written to %s.", sSpawnsPath);
+        return false;
+    }
 }
 
 stock void GetCurrentMapName(char[] sName, int iLength)

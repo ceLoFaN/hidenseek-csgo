@@ -690,7 +690,7 @@ public void OnMapEnd()
         SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
     }
     if(g_iSaveSpawnPointsToFile)
-        SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile > 1);
+        SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile == 2);
 }
 
 public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)

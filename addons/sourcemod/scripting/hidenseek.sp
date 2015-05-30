@@ -402,7 +402,6 @@ public void OnPluginStart()
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
     HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
-    HookEventEx("hns_give_grenades", OnHNSGiveGrenades);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
     AddCommandListener(Command_Kill, "kill");
@@ -1145,7 +1144,7 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
         int iWeapon = GetPlayerWeaponSlot(iClient, 2);
         int iTeam = GetClientTeam(iClient);
         if(iTeam == CS_TEAM_T) {
-            LaunchGiveGrenades(iClient);
+            GiveGrenades(iClient);
             if(IsValidEntity(iWeapon)) {
                 SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", GetGameTime() + 9001.0);     //change the firerate so we don't have weird clientside animations going on
                 SetEntPropFloat(iWeapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 9001.0);
@@ -1641,7 +1640,7 @@ stock void RemoveNades(int iClient)
         SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, g_iaGrenadeOffsets[i]);
 }
 
-void GiveGrenades(int iClient, bool bAnnonce)
+stock void GiveGrenades(int iClient)
 {
     int iaReceived[6] = {0, ...};
     int iLastType = -1;
@@ -1661,10 +1660,7 @@ void GiveGrenades(int iClient, bool bAnnonce)
             iLastType = i;
         }
     }
-    
-    if (!bAnnonce)
-        return;
-    
+
     if(iLastType == -1)
         PrintToChat(iClient, "  \x04[HNS] %t", "No Grenades");
     else {
@@ -1693,8 +1689,6 @@ void GiveGrenades(int iClient, bool bAnnonce)
         }
         PrintToChat(iClient, "  \x04[HNS] %t", "Grenades Received", sGrenadeMessage);
     }
-    
-    return;
 }
 
 stock void SwapTeams()
@@ -2055,41 +2049,4 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
         PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
         SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
     }
-}
-
-void LaunchGiveGrenades(int iClient, bool bAnnonce = true)
-{
-    Event hEvent = CreateEvent("hns_give_grenades");
-    hEvent.SetInt("userid", GetClientUserId(iClient));
-    hEvent.SetBool("annonce", bAnnonce);
-    hEvent.Fire(true);
-}
-
-public void OnHNSGiveGrenades(Event hEvent, const char[] sName, bool bDontBroadcast)
-{
-    int iClient, iUserId = hEvent.GetInt("userid");
-    if ((iClient = GetClientOfUserId(iUserId)) == 0) {
-        LogError("GiveGrenades error: got invalid userid. (Userid: %d)", iUserId);
-        return;
-    }
-
-    if (!IsClientInGame(iClient)) {
-        LogError("GiveGrenades error: client not in game. (Client: %d)", iClient);
-        return;
-    }
-    
-    int iClientTeam;
-    if ((iClientTeam = GetClientTeam(iClient)) != CS_TEAM_T) {
-        LogError("GiveGrenades error: bad client team. (Team: %d)", iClientTeam);
-        return;
-    }
-    
-    if (!IsPlayerAlive(iClient)) {
-        LogError("GiveGrenades error: client not alive. (Client: %d)", iClient);
-        return;
-    }
-    
-    GiveGrenades(iClient, hEvent.GetBool("annonce"));
-    
-    return;
 }

@@ -2021,7 +2021,7 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     return Plugin_Continue;
 }
 
-public int OnAdminMenuReady(Handle topmenu)
+public void OnAdminMenuReady(Handle topmenu)
 {
     TopMenu AdminMenu = TopMenu.FromHandle(topmenu);
     if (AdminMenu == g_AdminMenu)

@@ -1272,13 +1272,7 @@ public void OnClientPutInServer(int iClient)
     g_baWelcomeMsgShown[iClient] = false;
 }
 
-public Action Command_Spectate(int iClient, const char[] sCommand, int iArgCount)
-{
-    if(!g_bEnabled)
-        return Plugin_Continue;
-    if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
-        return Plugin_Continue;
-
+public HandlePlayerSpectateRequest(int iClient) {
     int iTeam = GetClientTeam(iClient);
     if(g_bRespawnMode) {
         if(iTeam == CS_TEAM_T)
@@ -1302,6 +1296,16 @@ public Action Command_Spectate(int iClient, const char[] sCommand, int iArgCount
         }
     }
     return Plugin_Continue;
+}
+
+public Action Command_Spectate(int iClient, const char[] sCommand, int iArgCount)
+{
+    if(!g_bEnabled)
+        return Plugin_Continue;
+    if(!g_bBlockJoinTeam || iClient == 0 || iClient > MaxClients)
+        return Plugin_Continue;
+
+    return HandlePlayerSpectateRequest(iClient);
 }
 
 public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount)
@@ -1338,24 +1342,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
             }
         }
         else if(iChosenTeam == JOINTEAM_SPEC) {
-            if(g_bRespawnMode) {
-                if(PlayerCanDisappear(iClient)) {
-                    PrintToChat(iClient, "  \x04[HNS] %t", "Spectate Pending", 5.0, "s");
-                    CreateTimer(5.0, MovePlayerToSpectators, iClient, TIMER_FLAG_NO_MAPCHANGE);
-                    return Plugin_Handled;
-                }
-            }
-            else {
-                if(IsPlayerAlive(iClient)) {
-                    PrintToConsole(iClient, "  \x04[HNS] %T", "Spectate Deny Alive", iClient);
-                    return Plugin_Stop;
-                }
-                else {
-                    g_iaInitialTeamTrack[iClient] = iTeam;
-                    SilentUnfreeze(iClient);
-                    return Plugin_Continue;
-                }
-            }
+            return HandlePlayerSpectateRequest(iClient);
         }
         else {
             PrintToConsole(iClient, "  \x04[HNS] %T", "Invalid Team Console", iClient);
@@ -1375,7 +1362,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
             return Plugin_Stop;
         }
         if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND)
-        return Plugin_Continue;
+            return Plugin_Continue;
     }
     SilentUnfreeze(iClient);
     return Plugin_Continue;

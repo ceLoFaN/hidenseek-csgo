@@ -953,7 +953,7 @@ public Action Hook_SetTransmit(int iClient, int iEntity)
     return Plugin_Handled;
 }
 
-public int OnEntityCreated(int iEntity, const char[] sClassName)
+public void OnEntityCreated(int iEntity, const char[] sClassName)
 {
     if(g_bEnabled) {    
         if(g_bFrostNades) {
@@ -1272,7 +1272,7 @@ public void OnClientPutInServer(int iClient)
     g_baWelcomeMsgShown[iClient] = false;
 }
 
-public HandlePlayerSpectateRequest(int iClient) {
+public Action HandlePlayerSpectateRequest(int iClient) {
     int iTeam = GetClientTeam(iClient);
     if(g_bRespawnMode) {
         if(iTeam == CS_TEAM_T)
@@ -2087,7 +2087,7 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     return Plugin_Continue;
 }
 
-public int OnAdminMenuReady(Handle topmenu)
+public void OnAdminMenuReady(Handle topmenu)
 {
     TopMenu AdminMenu = TopMenu.FromHandle(topmenu);
     if (AdminMenu == g_AdminMenu)

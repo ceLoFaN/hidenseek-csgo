@@ -332,6 +332,7 @@
 	{
 	    "#format"		"{1:f},{2:s}"
 		"en"			"You will be moved to spectators in {1} second{2}."
+		"ru"			"Вы будете перемещены к наблюдателям через {1} с."
 	}
 
 	//Console phrases

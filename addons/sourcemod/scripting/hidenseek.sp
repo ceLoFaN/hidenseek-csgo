@@ -86,6 +86,13 @@
 #define FROST_COLOR            {20,63,255,255}
 #define FREEZE_COLOR           {20,63,255,167}
 
+// Balance Defines
+#define TEAM_IS_FINE            1 << 0
+#define TEAM_COULD_USE_BUFF     1 << 1
+#define TEAM_NEEDS_BUFF         1 << 2
+#define TEAM_CAN_TAKE_NERF      1 << 3
+#define TEAM_NEEDS_NERF         1 << 4
+
 // In-game Team Defines
 #define JOINTEAM_RND       0
 #define JOINTEAM_SPEC      1    
@@ -1444,13 +1451,64 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
     return Plugin_Continue;
 }
 
+public int EnemyTeam(int iTeam)
+{
+    if(iTeam == CS_TEAM_CT)
+        return CS_TEAM_T;
+    else if(iTeam == CS_TEAM_T)
+        return CS_TEAM_CT;
+
+    return -1;
+}
+
+public int TeamBalanceStatus(int iTeam)
+{
+    int iStatus = 0;
+    int iTeamTCount = GetTeamPlayerCount(CS_TEAM_CT);
+    int iTeamCTCount = GetTeamPlayerCount(CS_TEAM_T);
+
+    // CAN TAKE NERF
+    if(iTeamTCount > iTeamCTCount + 2) {
+        if(iTeam == CS_TEAM_T)
+            iStatus |= TEAM_CAN_TAKE_NERF;
+        else if(iTeam == CS_TEAM_CT)
+            iStatus |= TEAM_COULD_USE_BUFF;
+    }
+    // NEEDS NERF
+    if(iTeamTCount && iTeamTCount > RoundToCeil(iTeamCTCount * 1.25 + 1.25)) {
+        if(iTeam == CS_TEAM_T)
+            iStatus |= TEAM_NEEDS_NERF;
+        else if(iTeam == CS_TEAM_CT)
+            iStatus |= TEAM_NEEDS_BUFF;
+    }
+    // COULD USE BUFF
+    if(RoundToFloor(iTeamTCount * 0.8) < iTeamCTCount) {
+        if(iTeam == CS_TEAM_T)
+            iStatus |= TEAM_COULD_USE_BUFF;
+        else if(iTeam == CS_TEAM_CT)
+            iStatus |= TEAM_CAN_TAKE_NERF;
+    }
+    // NEEDS BUFF
+    if(iTeamTCount < iTeamCTCount) {
+        if(iTeam == CS_TEAM_T)
+            iStatus |= TEAM_NEEDS_BUFF;
+        else if(iTeam == CS_TEAM_CT)
+            iStatus |= TEAM_NEEDS_NERF;
+    }
+
+    if(iStatus)
+        return iStatus;
+
+    return TEAM_IS_FINE;
+}
+
 public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
     if(!g_bEnabled)
         return;
     int iAttacker = GetClientOfUserId(hEvent.GetInt("attacker"));
     int iVictim = GetClientOfUserId(hEvent.GetInt("userid"));
-    int iAssister = GetClientOfUserId(hEvent.GetInt("assister"));
+    // int iAssister = GetClientOfUserId(hEvent.GetInt("assister"));
 
     int iVictimTeam = GetClientTeam(iVictim);
 
@@ -1496,30 +1554,50 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                     }
                 }
             }
-        }
-    }
-    if(g_baFrozen[iVictim])
-        SilentUnfreeze(iVictim);
-
-    if(iVictim > 0 && iVictim <= MaxClients && iAttacker == 0) {
-        if(!(iAssister > 0 && iAssister <= MaxClients)) {
-            if(!g_baDiedBecauseRespawning[iVictim]) {
-                SetClientFrags(iVictim, GetClientFrags(iVictim) + 1);
-                if(iVictimTeam == CS_TEAM_T) {
-                    SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) + 1);
-                    g_baAvailableToSwap[iVictim] = true;
-                }
+            else { // didn't get killed by a player
+                SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) + 1);
                 if(g_iSuicidePointsPenalty) {
                     CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
                     PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
                 }
+                if(g_bRespawnMode) {
+                    if(!g_baDiedBecauseRespawning[iVictim]) {
+                        int iVictimTeamBalanceStatus = TeamBalanceStatus(CS_TEAM_T);
+                        if(iVictimTeamBalanceStatus & (TEAM_NEEDS_NERF | TEAM_CAN_TAKE_NERF)) {
+                            g_baAvailableToSwap[iVictim] = false;
+                            CS_SwitchTeam(iAttacker, CS_TEAM_CT);
+                            g_iaInitialTeamTrack[iAttacker] = CS_TEAM_CT;
+                            PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team CT");
+                        }
+                    }
+                    else {
+                        g_baAvailableToSwap[iVictim] = true;
+                    }
+                }
             }
         }
-        if(iVictimTeam == CS_TEAM_CT) {
-            if(!g_baDiedBecauseRespawning[iVictim])
-                g_baAvailableToSwap[iVictim] = true;
+        else if(iVictimTeam == CS_TEAM_CT) {
+            if(iAttacker == 0 || iAttacker > MaxClients) {
+                if(g_bRespawnMode) {
+                    if(!g_baDiedBecauseRespawning[iVictim]) {
+                        int iVictimTeamBalanceStatus = TeamBalanceStatus(CS_TEAM_CT);
+                        if(iVictimTeamBalanceStatus & TEAM_NEEDS_NERF) {
+                            g_baAvailableToSwap[iVictim] = false;
+                            CS_SwitchTeam(iAttacker, CS_TEAM_T);
+                            g_iaInitialTeamTrack[iAttacker] = CS_TEAM_T;
+                            PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team T");
+                        }
+                        else {
+                            g_baAvailableToSwap[iVictim] = true;
+                        }
+                    }
+                }
+            }
         }
     }
+
+    if(g_baFrozen[iVictim])
+        SilentUnfreeze(iVictim);
 
     if(g_bRespawnMode) {
         if(g_baAvailableToSwap[iVictim]) {

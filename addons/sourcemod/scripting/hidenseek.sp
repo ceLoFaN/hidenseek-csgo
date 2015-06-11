@@ -69,7 +69,7 @@
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
-#define INVISIBILITY_BREAK_DISTANCE   "200.0"
+#define INVISIBILITY_BREAK_DISTANCE   "120.0"
 #define BASE_RESPAWN_TIME             "5"
 #define CT_RESPAWN_SLEEP_DURATION     "5"
 #define RESPAWN_ROUND_DURATION        "25"

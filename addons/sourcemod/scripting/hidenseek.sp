@@ -1781,7 +1781,7 @@ float GetClientGrenadeChance(int iClient, int iGrenadeType)
             return g_faGrenadeChance[iGrenadeType] / view_as<float>iPenaltyStacks;
     }
 
-    return g_faGrenadeChance[iGrenadeType]
+    return g_faGrenadeChance[iGrenadeType];
 }
 
 stock void GiveGrenades(int iClient)

@@ -1564,14 +1564,14 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                     if(!g_baDiedBecauseRespawning[iVictim]) {
                         int iVictimTeamBalanceStatus = TeamBalanceStatus(CS_TEAM_T);
                         if(iVictimTeamBalanceStatus & (TEAM_NEEDS_NERF | TEAM_CAN_TAKE_NERF)) {
-                            g_baAvailableToSwap[iVictim] = false;
+                            g_baAvailableToSwap[iVictim] = true;
                             CS_SwitchTeam(iAttacker, CS_TEAM_CT);
                             g_iaInitialTeamTrack[iAttacker] = CS_TEAM_CT;
                             PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team CT");
                         }
                     }
                     else {
-                        g_baAvailableToSwap[iVictim] = true;
+                        g_baAvailableToSwap[iVictim] = false;
                     }
                 }
             }
@@ -1582,13 +1582,13 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                     if(!g_baDiedBecauseRespawning[iVictim]) {
                         int iVictimTeamBalanceStatus = TeamBalanceStatus(CS_TEAM_CT);
                         if(iVictimTeamBalanceStatus & TEAM_NEEDS_NERF) {
-                            g_baAvailableToSwap[iVictim] = false;
+                            g_baAvailableToSwap[iVictim] = true;
                             CS_SwitchTeam(iAttacker, CS_TEAM_T);
                             g_iaInitialTeamTrack[iAttacker] = CS_TEAM_T;
                             PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team T");
                         }
                         else {
-                            g_baAvailableToSwap[iVictim] = true;
+                            g_baAvailableToSwap[iVictim] = false;
                         }
                     }
                 }

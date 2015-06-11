@@ -1773,6 +1773,17 @@ stock void RemoveNades(int iClient)
         SetEntProp(iClient, Prop_Send, "m_iAmmo", 0, _, g_iaGrenadeOffsets[i]);
 }
 
+float GetClientGrenadeChance(int iClient, int iGrenadeType)
+{
+    if(g_bRespawnMode) {
+        int iPenaltyStacks = GetSuicidePenaltyStacks(iClient);
+        if(iPenaltyStacks)
+            return g_faGrenadeChance[iGrenadeType] / view_as<float>iPenaltyStacks;
+    }
+
+    return g_faGrenadeChance[iGrenadeType]
+}
+
 stock void GiveGrenades(int iClient)
 {
     int iaReceived[6] = {0, ...};
@@ -1781,7 +1792,7 @@ stock void GiveGrenades(int iClient)
     bool bAtLeastTwo = false;
     for(int i = 0; i < sizeof(iaReceived); i++) {
         for(int j = 0; j < g_iaGrenadeMaximumAmounts[i]; j++)
-            if(GetRandomFloat(0.0, 1.0) < g_faGrenadeChance[i])
+            if(GetRandomFloat(0.0, 1.0) < GetClientGrenadeChance(iClient, i))
                 iaReceived[i]++;
         if(iaReceived[i]) {
             GivePlayerItem(iClient, g_saGrenadeWeaponNames[i]);

@@ -801,34 +801,46 @@ public Action SwapToNade(Handle hTimer, DataPack hPack)
     hPack.Reset();
     int iClient = hPack.ReadCell();
     int iWeaponThrown = hPack.ReadCell();
-    int count = hPack.ReadCell();
+    int iCount = hPack.ReadCell();
     if(!IsClientInGame(iClient))
         return Plugin_Continue;
+
     int iWeaponTemp = -1;
-    if(!count) {
+
+    if(!iCount) {
         if(IsValidEntity(iWeaponThrown)) {
             RemovePlayerItem(iClient, iWeaponThrown);
             RemoveEdict(iWeaponThrown);
         }
         iWeaponTemp = GetPlayerWeaponSlot(iClient, 3);
     }
+
     if(iWeaponThrown == iWeaponTemp)
         return Plugin_Continue; //won't even get here but eh, you nevah know
-    if(count)
+
+    if(iCount)
         iWeaponTemp = iWeaponThrown;
+
     if(!IsValidEntity(iWeaponTemp))
         return Plugin_Continue;
-    char weapon_name[64];
-    GetEntityClassname(iWeaponTemp, weapon_name, sizeof(weapon_name));
+
+    char sWeaponName[64];
+    GetEntityClassname(iWeaponTemp, sWeaponName, sizeof(sWeaponName));
+
     int i;
-    for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(weapon_name, g_saGrenadeWeaponNames[i]); i++) {}
-    SetEntProp(iClient, Prop_Send, "m_iAmmo", GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1, _, g_iaGrenadeOffsets[i]);
+    for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
+
+    iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]);
+
     RemovePlayerItem(iClient, iWeaponTemp);
     RemoveEdict(iWeaponTemp);
-    iWeaponTemp = GivePlayerItem(iClient, weapon_name);
+
+    iWeaponTemp = GivePlayerItem(iClient, sWeaponName);
     SetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon", iWeaponTemp);
+    SetEntProp(iClient, Prop_Send, "m_iAmmo", iCount, _, g_iaGrenadeOffsets[i]);
     SetEntPropFloat(iWeaponTemp, Prop_Send, "m_flNextPrimaryAttack", GetGameTime() + 1.1);
     SetEntPropFloat(iWeaponTemp, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 1.1);
+
     return Plugin_Continue;
 }
 

@@ -327,14 +327,20 @@
 		"en"			"You are awake."
 		"ru"			"Вы разморожены."
 	}
+
+	"Spectate Pending"
+	{
+	    "#format"		"{1:f},{2:s}"
+		"en"			"You will be moved to spectators in {1} second{2}."
+	}
+
 	//Console phrases
-	
 	"Spectate Deny Alive"
 	{
 		"en"			"You are not allowed to go spectating while you're alive."
-		"ru"			"Запрещено присоединяться к сперктаторам, пока вы живы."
+		"ru"			"Запрещено присоединяться к наблюдателям, пока вы живы."
 	}
-	
+
 	"Invalid Team Console"
 	{
 		"en"			"You are trying to join an invalid team."
@@ -344,6 +350,6 @@
 	"Kill Deny"
 	{
 		"en"			"You are not allowed to suicide."
-		"ru"			"Вам запрещено использовать эту команду."
+		"ru"			"Вам запрещено совершать самоубийство."
 	}
 }

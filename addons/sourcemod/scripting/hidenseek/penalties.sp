@@ -1,7 +1,7 @@
-new g_iaSuicidePenaltyStacks[MAXPLAYERS + 1] = {0, ...};
-new g_iMaxSuicidePenaltyStacks = 5;
+int g_iaSuicidePenaltyStacks[MAXPLAYERS + 1] = {0, ...};
+int g_iMaxSuicidePenaltyStacks = 4;
 
-public SetSuicidePenaltyStacks(iClient, iCount)
+public int SetSuicidePenaltyStacks(int iClient, int iCount)
 {
     g_iaSuicidePenaltyStacks[iClient] = iCount;
     if(g_iaSuicidePenaltyStacks[iClient] > g_iMaxSuicidePenaltyStacks)
@@ -12,21 +12,21 @@ public SetSuicidePenaltyStacks(iClient, iCount)
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-public ResetSuicidePenaltyStacks(iClient)
+public int ResetSuicidePenaltyStacks(int iClient)
 {
     g_iaSuicidePenaltyStacks[iClient] = 0;
 
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-public GetSuicidePenaltyStacks(iClient)
+public int GetSuicidePenaltyStacks(int iClient)
 {
     return g_iaSuicidePenaltyStacks[iClient];
 }
 
-public Float:RespawnPenaltyTime(iClient)
+public float RespawnPenaltyTime(int iClient)
 {
-    new iStacks = GetSuicidePenaltyStacks(iClient);
+    int iStacks = GetSuicidePenaltyStacks(iClient);
 
-    return float(2 * iStacks * iStacks + 3 * iStacks);
+    return view_as<float>(8 * iStacks + 4 / iStacks);
 }

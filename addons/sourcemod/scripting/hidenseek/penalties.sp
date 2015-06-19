@@ -27,6 +27,8 @@ public int GetSuicidePenaltyStacks(int iClient)
 public float RespawnPenaltyTime(int iClient)
 {
     int iStacks = GetSuicidePenaltyStacks(iClient);
-
+    if(!iStacks)
+        return 0.0;
+    
     return view_as<float>(8 * iStacks + 4 / iStacks);
 }

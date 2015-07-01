@@ -1,13 +1,10 @@
 language: bash
 
 env:
-    - SMVERSION=1.6
     - SMVERSION=1.7
 
 matrix:
     fast_finish: true
-    allow_failures:
-        - env: SMVERSION=1.7
     
 before_install:
     - sudo apt-get update -qq

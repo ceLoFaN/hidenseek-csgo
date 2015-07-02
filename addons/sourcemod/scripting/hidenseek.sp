@@ -211,17 +211,17 @@ bool g_bLoadSpawnPointsFromFile;
 int g_iSaveSpawnPointsToFile;
 
 //RespawnMode vars
-Handle g_haInvisible[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
 bool g_baAvailableToSwap[MAXPLAYERS + 1] = {false, ...};
 bool g_baDiedBecauseRespawning[MAXPLAYERS + 1] = {false, ...};
 int g_iRoundDuration = 0;
 int g_iMapTimelimit = 0;
 int g_iMapRounds = 0;
-Handle g_hRoundTimer = INVALID_HANDLE;
-Handle g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+Handle g_hRoundTimer = null;
+Handle g_haSpawnGenerateTimer[MAXPLAYERS + 1] = {null, ...};
 bool g_bEnoughRespawnPoints = false;
 bool g_baRespawnProtection[MAXPLAYERS + 1] = {true, ...};
-Handle g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+Handle g_haRespawnProtectionTimer[MAXPLAYERS + 1] = {null, ...};
 bool g_bLoadedSpawnPoints = false;
 
 //Roundstart vars
@@ -229,8 +229,8 @@ float g_fRoundStartTime;    // Records the time when the round started
 int g_iInitialTerroristsCount;    // Counts the number of Ts at roundstart
 bool g_bBombFound;            // Records if the bomb has been found
 float g_fCountdownOverTime;    // The time when the countdown should be over
-Handle g_hStartCountdown = INVALID_HANDLE;
-Handle g_hShowCountdownMessage = INVALID_HANDLE;
+Handle g_hStartCountdown = null;
+Handle g_hShowCountdownMessage = null;
 int g_iCountdownCount;
 
 //Mapstart vars
@@ -247,7 +247,7 @@ TopMenu g_AdminMenu;
 
 //Realtime vars
   //frostnades
-Handle g_haFreezeTimer[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+Handle g_haFreezeTimer[MAXPLAYERS + 1] = {null, ...};
 bool g_baFrozen[MAXPLAYERS + 1] = {false, ...};
 
   //game
@@ -442,6 +442,11 @@ public void OnPluginStart()
     TopMenu topmenu;
     if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
         OnAdminMenuReady(topmenu);
+    
+    char sPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, sPath, sizeof(sPath), "data/hidenseek_spawns");
+    if (!DirExists(sPath))
+        CreateDirectory(sPath, 511);
 }
 
 public void OnConfigsExecuted()
@@ -646,9 +651,9 @@ public Action GetMapRandomSpawnEntitiesTimer(Handle hTimer)
 
 public void OnMapTimeLeftChanged()
 {
-    if(g_hRoundTimer != INVALID_HANDLE) {
+    if(g_hRoundTimer != null) {
         KillTimer(g_hRoundTimer);
-        g_hRoundTimer = INVALID_HANDLE;
+        g_hRoundTimer = null;
     }
 
     int iRoundTime = GameRules_GetProp("m_iRoundTime");
@@ -658,7 +663,7 @@ public void OnMapTimeLeftChanged()
 public Action EnableRoundObjectives(Handle hTimer)
 {
     SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
-    g_hRoundTimer = INVALID_HANDLE;
+    g_hRoundTimer = null;
 }
 
 public Action RespawnDeadPlayersTimer(Handle hTimer) 
@@ -677,21 +682,21 @@ public Action RespawnDeadPlayersTimer(Handle hTimer)
 public void OnMapEnd() 
 {
     for(int iClient = 1; iClient <= MaxClients; iClient++) {
-        if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
+        if(g_haFreezeTimer[iClient] != null) {
             KillTimer(g_haFreezeTimer[iClient]);
-            g_haFreezeTimer[iClient] = INVALID_HANDLE;
+            g_haFreezeTimer[iClient] = null;
             g_iCountdownCount = 0;
         }
         CloseRespawnFreezeCountdown(iClient);
         CancelPlayerRespawn(iClient);
-        if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+        if(g_haSpawnGenerateTimer[iClient] != null) {
             KillTimer(g_haSpawnGenerateTimer[iClient]);
-            g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+            g_haSpawnGenerateTimer[iClient] = null;
         }
     }
-    if(g_hRoundTimer != INVALID_HANDLE) {
+    if(g_hRoundTimer != null) {
         KillTimer(g_hRoundTimer);
-        g_hRoundTimer = INVALID_HANDLE;
+        g_hRoundTimer = null;
     }
     if(g_bRespawnMode) {
         SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
@@ -717,9 +722,9 @@ public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
     RemoveHostages();
     
     if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0) {
-        if(g_hStartCountdown != INVALID_HANDLE) {
+        if(g_hStartCountdown != null) {
             KillTimer(g_hStartCountdown);
-            g_hStartCountdown = INVALID_HANDLE;
+            g_hStartCountdown = null;
         }
         if(!g_bRespawnMode)
             g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
@@ -729,11 +734,11 @@ public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
 
 public Action StartCountdown(Handle hTimer)
 {
-    g_hStartCountdown = INVALID_HANDLE;
+    g_hStartCountdown = null;
     for(int iClient = 1; iClient < MaxClients; iClient++) {
         CreateTimer(0.1, FirstCountdownMessage, iClient);
     }
-    if(g_hShowCountdownMessage != INVALID_HANDLE) {
+    if(g_hShowCountdownMessage != null) {
         KillTimer(g_hShowCountdownMessage);
         g_iCountdownCount = 0;
     }
@@ -769,7 +774,7 @@ public Action ShowCountdownMessage(Handle hTimer, any iTarget)
                 PrintCenterText(iClient, "\n  %t", "Round Start");
         }
         //EmitSoundToAll(SOUND_GOGOGO);
-        g_hShowCountdownMessage = INVALID_HANDLE;
+        g_hShowCountdownMessage = null;
         return Plugin_Stop;
     }
 }
@@ -786,7 +791,7 @@ public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             int iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
             DataPack hPack = new DataPack();
-            if(g_haInvisible[iClient] != INVALID_HANDLE) 
+            if(g_haInvisible[iClient] != null) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
             hPack.WriteCell(iClient);
@@ -911,7 +916,7 @@ public void MakeClientInvisible(int iClient, float fDuration)
     SDKHook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     PrintToChat(iClient, "  \x04[HNS] %t", "Invisible On", fDuration);
 
-    if(g_haInvisible[iClient] != INVALID_HANDLE)
+    if(g_haInvisible[iClient] != null)
         KillTimer(g_haInvisible[iClient]);
     g_haInvisible[iClient] = CreateTimer(g_fInvisibilityDuration, MakeClientVisible, iClient, TIMER_FLAG_NO_MAPCHANGE);
     CreateTimer(0.5, CheckDistanceToEnemies, iClient, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
@@ -920,16 +925,16 @@ public void MakeClientInvisible(int iClient, float fDuration)
 public Action MakeClientVisible(Handle hTimer, any iClient)
 {
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
-    g_haInvisible[iClient] = INVALID_HANDLE;
+    g_haInvisible[iClient] = null;
     if(IsPlayerAlive(iClient))
         PrintToChat(iClient, "  \x04[HNS] %t", "Invisible Off");
 }
 
 public void BreakInvisibility(int iClient, int iReason)
 {
-    if(g_haInvisible[iClient] != INVALID_HANDLE) {
+    if(g_haInvisible[iClient] != null) {
         KillTimer(g_haInvisible[iClient]);
-        g_haInvisible[iClient] = INVALID_HANDLE;
+        g_haInvisible[iClient] = null;
         SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
         if(iReason == REASON_ENEMY_TOO_CLOSE)
             PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Enemy Near");
@@ -942,7 +947,7 @@ public void BreakInvisibility(int iClient, int iReason)
 
 public Action CheckDistanceToEnemies(Handle hTimer, any iClient)
 {
-    if(g_haInvisible[iClient] == INVALID_HANDLE)
+    if(g_haInvisible[iClient] == null)
         return Plugin_Stop;
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -1066,28 +1071,28 @@ public void OnClientDisconnect(int iClient)
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
 
     if(g_baFrozen[iClient]) {
-        if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
+        if(g_haFreezeTimer[iClient] != null) {
             KillTimer(g_haFreezeTimer[iClient])
-            g_haFreezeTimer[iClient] = INVALID_HANDLE;
+            g_haFreezeTimer[iClient] = null;
         }
         g_baFrozen[iClient] = false;
     }
-    if(g_haInvisible[iClient] != INVALID_HANDLE) {
+    if(g_haInvisible[iClient] != null) {
         KillTimer(g_haInvisible[iClient]);
-        g_haInvisible[iClient] = INVALID_HANDLE;
+        g_haInvisible[iClient] = null;
     }
     CloseRespawnFreezeCountdown(iClient);
-    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+    if(g_haSpawnGenerateTimer[iClient] != null) {
         KillTimer(g_haSpawnGenerateTimer[iClient]);
-        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+        g_haSpawnGenerateTimer[iClient] = null;
     }
     g_baToggleKnife[iClient] = true;
     
    
     // Respawn Protection
-    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+    if(g_haRespawnProtectionTimer[iClient] != null) {
         KillTimer(g_haRespawnProtectionTimer[iClient]);
-        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+        g_haRespawnProtectionTimer[iClient] = null;
         g_baRespawnProtection[iClient] = false;
     }
 }
@@ -1130,9 +1135,9 @@ public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
     
     CreateTimer(0.0, RemoveRadar, iClient);
 
-    if(g_haSpawnGenerateTimer[iClient] != INVALID_HANDLE) {
+    if(g_haSpawnGenerateTimer[iClient] != null) {
         KillTimer(g_haSpawnGenerateTimer[iClient]);
-        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+        g_haSpawnGenerateTimer[iClient] = null;
     }
     if(!g_bEnoughRespawnPoints || !g_bLoadedSpawnPoints)
         g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
@@ -1153,7 +1158,7 @@ public Action GenerateRandomSpawns(Handle hTimer, any iClient) {
         return Plugin_Continue;
     }
     else {
-        g_haSpawnGenerateTimer[iClient] = INVALID_HANDLE;
+        g_haSpawnGenerateTimer[iClient] = null;
         return Plugin_Stop;
     }
 }
@@ -1202,9 +1207,9 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
                     PrintCenterText(iClient, "\n  %t", "Wake Up", iCountdownTimeFloor, (iCountdownTimeFloor == 1) ? "" : "s");
                     StartRespawnFreezeCountdown(iClient, g_fCTRespawnSleepDuration);
                     // Respawn Protection
-                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                    if(g_haRespawnProtectionTimer[iClient] != null) {
                         KillTimer(g_haRespawnProtectionTimer[iClient]);
-                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                        g_haRespawnProtectionTimer[iClient] = null;
                     }
                     g_haRespawnProtectionTimer[iClient] = CreateTimer(g_fCTRespawnSleepDuration + RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
                 }
@@ -1213,16 +1218,16 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
                 if(g_iConnectedClients > 1) {
                     Freeze(iClient, fDefreezeTime, COUNTDOWN);
                     // Respawn Protection
-                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                    if(g_haRespawnProtectionTimer[iClient] != null) {
                         KillTimer(g_haRespawnProtectionTimer[iClient]);
-                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                        g_haRespawnProtectionTimer[iClient] = null;
                     }
                     g_haRespawnProtectionTimer[iClient] = CreateTimer(fDefreezeTime+RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
                 } else {
                     // Respawn Protection
-                    if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                    if(g_haRespawnProtectionTimer[iClient] != null) {
                         KillTimer(g_haRespawnProtectionTimer[iClient]);
-                        g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                        g_haRespawnProtectionTimer[iClient] = null;
                     }
                     g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
                 }
@@ -1230,9 +1235,9 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
             else if(GetEntityMoveType(iClient) == MOVETYPE_NONE) {
                 SetEntityMoveType(iClient, MOVETYPE_WALK);
                 // Respawn Protection
-                if(g_haRespawnProtectionTimer[iClient] != INVALID_HANDLE) {
+                if(g_haRespawnProtectionTimer[iClient] != null) {
                     KillTimer(g_haRespawnProtectionTimer[iClient]);
-                    g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+                    g_haRespawnProtectionTimer[iClient] = null;
                 }
                 g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
             }
@@ -1275,9 +1280,9 @@ public void GameModeSetup() {
             SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
-        if(g_hRoundTimer != INVALID_HANDLE) {
+        if(g_hRoundTimer != null) {
             KillTimer(g_hRoundTimer);
-            g_hRoundTimer = INVALID_HANDLE;
+            g_hRoundTimer = null;
         }
     }
 }
@@ -1680,7 +1685,7 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
         return Plugin_Changed;
     }
     
-    if(g_haInvisible[iClient] != INVALID_HANDLE)
+    if(g_haInvisible[iClient] != null)
         if(GetEntityMoveType(iClient) == MOVETYPE_LADDER)
             BreakInvisibility(iClient, REASON_LADDER);
 
@@ -1975,7 +1980,7 @@ stock void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
         }
     }
     if(g_baFrozen[iClient]) {
-        if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
+        if(g_haFreezeTimer[iClient] != null) {
             KillTimer(g_haFreezeTimer[iClient]);
             if(iType == FROSTNADE)
                 g_haFreezeTimer[iClient] = CreateTimer(fDuration, Unfreeze, iClient);
@@ -2007,7 +2012,7 @@ public Action Unfreeze(Handle hTimer, any iClient)
         if(g_baFrozen[iClient]) {
             SetEntityMoveType(iClient, MOVETYPE_WALK);
             g_baFrozen[iClient] = false;
-            g_haFreezeTimer[iClient] = INVALID_HANDLE;
+            g_haFreezeTimer[iClient] = null;
             float faCoord[3];
             GetClientEyePosition(iClient, faCoord);
             EmitAmbientSound(SOUND_UNFREEZE, faCoord, iClient, 55);
@@ -2023,7 +2028,7 @@ public Action UnfreezeCountdown(Handle hTimer, any iClient)
     if(iClient && IsClientInGame(iClient)) {
         SetEntityMoveType(iClient, MOVETYPE_WALK);
         g_baFrozen[iClient] = false;
-        g_haFreezeTimer[iClient] = INVALID_HANDLE;
+        g_haFreezeTimer[iClient] = null;
         if(IsPlayerAlive(iClient) && !g_bRespawnMode)
             PrintToChat(iClient, "  \x04[HNS] %t", "Round Start");
     }
@@ -2034,9 +2039,9 @@ stock void SilentUnfreeze(int iClient)
 {
     g_baFrozen[iClient] = false;
     SetEntityMoveType(iClient, MOVETYPE_WALK);
-    if(g_haFreezeTimer[iClient] != INVALID_HANDLE) {
+    if(g_haFreezeTimer[iClient] != null) {
         KillTimer(g_haFreezeTimer[iClient]);
-        g_haFreezeTimer[iClient] = INVALID_HANDLE;
+        g_haFreezeTimer[iClient] = null;
     }
     ScreenFade(iClient);
 }
@@ -2166,7 +2171,7 @@ public void WriteWelcomeMessage(int iClient)
 
 public Action RemoveRespawnProtection(Handle hTimer, any iClient)
 {
-    g_haRespawnProtectionTimer[iClient] = INVALID_HANDLE;
+    g_haRespawnProtectionTimer[iClient] = null;
     g_baRespawnProtection[iClient] = false;
 }
 

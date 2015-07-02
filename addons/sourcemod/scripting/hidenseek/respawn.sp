@@ -1,5 +1,5 @@
-Handle g_haRespawn[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
-Handle g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+Handle g_haRespawn[MAXPLAYERS + 1] = {null, ...};
+Handle g_haRespawnFreezeCountdown[MAXPLAYERS + 1] = {null, ...};
 int g_iaRespawnCountdownCount[MAXPLAYERS + 1] = {0, ...};
 
 public void RespawnPlayerLazy(int iClient, float fDelay)
@@ -52,9 +52,9 @@ public Action RespawnFreezeCountdownTimer(Handle hTimer, Handle hPack) {
 
 public void CloseRespawnFreezeCountdown(int iClient)
 {
-    if(g_haRespawnFreezeCountdown[iClient] != INVALID_HANDLE) {
+    if(g_haRespawnFreezeCountdown[iClient] != null) {
         KillTimer(g_haRespawnFreezeCountdown[iClient], true);
-        g_haRespawnFreezeCountdown[iClient] = INVALID_HANDLE;
+        g_haRespawnFreezeCountdown[iClient] = null;
         g_iaRespawnCountdownCount[iClient] = 0;
     }
 }
@@ -70,18 +70,18 @@ public void RespawnPlayer(int iClient)
         if(GetClientTeam(iClient) == CS_TEAM_T || GetClientTeam(iClient) == CS_TEAM_CT)
             CS_RespawnPlayer(iClient);
     }
-    g_haRespawn[iClient] = INVALID_HANDLE;
+    g_haRespawn[iClient] = null;
 }
 
 public bool IsPlayerRespawning(int iClient)
 {
-    return g_haRespawn[iClient] != INVALID_HANDLE;
+    return g_haRespawn[iClient] != null;
 }
 
 public void CancelPlayerRespawn(int iClient)
 {
     if(IsPlayerRespawning(iClient)) {
         KillTimer(g_haRespawn[iClient]);
-        g_haRespawn[iClient] = INVALID_HANDLE;
+        g_haRespawn[iClient] = null;
     }
 }

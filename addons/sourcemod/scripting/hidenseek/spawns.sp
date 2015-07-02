@@ -102,12 +102,12 @@ public bool LoadSpawnPointsFromFile(bool bOverride)
     }
 
     //open the spawns file in read mode
-    Handle hFileHandle = OpenFile(sSpawnsPath, "r");
+    File hFileHandle = OpenFile(sSpawnsPath, "r");
 
     // parsing one line at a time until the end of the file
     char sLine[128];
     int iCount = 0;
-    while(!IsEndOfFile(hFileHandle) && ReadFileLine(hFileHandle, sLine, sizeof(sLine))) {
+    while(!hFileHandle.EndOfFile() && hFileHandle.ReadLine(sLine, sizeof(sLine))) {
         char saCoords[6][20];
         ExplodeString(sLine, " ", saCoords, sizeof(saCoords), sizeof(saCoords[]));
 
@@ -120,9 +120,9 @@ public bool LoadSpawnPointsFromFile(bool bOverride)
         iCount++;
     }
 
-    if(hFileHandle != INVALID_HANDLE) {
-        CloseHandle(hFileHandle);
-        hFileHandle = INVALID_HANDLE;
+    if(hFileHandle != null) {
+        delete hFileHandle;
+        hFileHandle = null;
     }
 
     if(iCount){
@@ -149,20 +149,20 @@ public bool SaveSpawnPointsToFile(bool bOverride)
             DeleteFile(sSpawnsPath);
 
     // create a file in write mode at the specified path
-    Handle hFileHandle = OpenFile(sSpawnsPath, "w");
+    File hFileHandle = OpenFile(sSpawnsPath, "w");
 
     int iEntity = -1;
     int iCount = 0;
     while((iEntity = FindEntityByClassname(iEntity, "info_deathmatch_spawn")) != -1) {
         float faCoord[3];
         GetEntPropVector(iEntity, Prop_Send, "m_vecOrigin", faCoord);
-        WriteFileLine(hFileHandle, "%f %f %f", faCoord[0], faCoord[1], faCoord[2]);
+        hFileHandle.WriteLine("%f %f %f", faCoord[0], faCoord[1], faCoord[2]);
         iCount++;
     }
 
-    if(hFileHandle != INVALID_HANDLE) {
-        CloseHandle(hFileHandle);
-        hFileHandle = INVALID_HANDLE;
+    if(hFileHandle != null) {
+        delete hFileHandle;
+        hFileHandle = null;
     }
 
     if(iCount) {

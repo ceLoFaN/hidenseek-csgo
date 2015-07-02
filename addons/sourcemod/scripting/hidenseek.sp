@@ -442,6 +442,11 @@ public void OnPluginStart()
     TopMenu topmenu;
     if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
         OnAdminMenuReady(topmenu);
+    
+    char sPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, sPath, sizeof(sPath), "data/hidenseek_spawns");
+    if (!DirExists(sPath))
+        CreateDirectory(sPath, 511);
 }
 
 public void OnConfigsExecuted()

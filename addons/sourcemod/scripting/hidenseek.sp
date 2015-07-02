@@ -1,6 +1,7 @@
 /*
    _________________
  o Since last update
+
  * Fixed an unhandled case when a player throws a Molotov and leaves the server;
  * Fixed a bug introduced in the previous versions that disabled teleports;
  * Made the plugin compatible with other custom knife skins plugins;
@@ -11,6 +12,7 @@
  o Thanks to Ownkruid, TUSKEN1337 and wortexo for testing.
    _________
  o Thanks to Root, Bacardi, FrozDark, TESLA-X4, Doc-Holiday, Vladislav Dolgov and Jannik 'Peace-Maker' Hartung whose code helped me a lot.
+
 */
 
 #include <sourcemod>

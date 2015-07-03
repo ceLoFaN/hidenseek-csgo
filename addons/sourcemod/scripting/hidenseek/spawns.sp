@@ -294,7 +294,7 @@ public bool SaveSpawnPointsToFile(bool bOverride)
     if(iCount) {
         PrintToServer("%d spawnpoint%s have been written for %s map.", 
             iCount, (iCount > 1) ? "s" : "", sMapName);
-        return true
+        return true;
     }
     else {
         PrintToServer("No spawnpoints have been written for %s map.", sMapName);

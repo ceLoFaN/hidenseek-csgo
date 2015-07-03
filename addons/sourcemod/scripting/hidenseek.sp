@@ -23,6 +23,7 @@
 #include <adminmenu>
 
 #pragma newdecls required
+#pragma semicolon 1
 
 #define PLUGIN_VERSION                "2.0.0-beta2"
 #define AUTHOR                        "ceLoFaN"
@@ -1095,7 +1096,7 @@ public void OnClientDisconnect(int iClient)
 
     if(g_baFrozen[iClient]) {
         if(g_haFreezeTimer[iClient] != null) {
-            KillTimer(g_haFreezeTimer[iClient])
+            KillTimer(g_haFreezeTimer[iClient]);
             g_haFreezeTimer[iClient] = null;
         }
         g_baFrozen[iClient] = false;
@@ -2206,7 +2207,7 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
     if(g_baRespawnProtection[iVictimClient] && iAttackerClient != 0) {
-        bDontBroadcast = true
+        bDontBroadcast = true;
         return Plugin_Changed;
     }
 

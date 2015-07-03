@@ -15,6 +15,13 @@ public SharedPlugin __pl_hidenseek =
 };
 
 /**
+ * Check hidenseek plugin status.
+ *
+ * @return			If plugin enabled true, otherwise false.
+ */
+native bool HNS_IsEnabled();
+
+/**
  * Called when CT freeze countdown ended.
  */
 forward void HNS_OnCountdownEnd();

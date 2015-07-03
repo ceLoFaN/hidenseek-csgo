@@ -319,9 +319,11 @@ int g_iaDefaultValues[] = {
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{    
+{
+    CreateNative("HNS_IsEnabled", Native_HNS_IsEnabled);
+
     RegPluginLibrary("hidenseek");
-    
+
     return APLRes_Success;
 }
 
@@ -2249,4 +2251,9 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
 //      GetCurrentMap(mapname, 128);
 //        
     }
+}
+
+public int Native_HNS_IsEnabled(Handle plugin, int numParams)
+{
+    return g_bEnabled;
 }

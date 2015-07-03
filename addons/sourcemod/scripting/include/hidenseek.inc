@@ -3,6 +3,30 @@
 #endif
 #define _hidenseek_included_
 
+#define HNSMODE_NORMAL		0
+#define HNSMODE_RESPAWN		1
+
+/**
+ * Check hidenseek plugin status.
+ *
+ * @return			If plugin enabled true, otherwise false.
+ */
+native bool HNS_IsEnabled();
+
+/**
+ * Get current hidenseek plugin mode.
+ *
+ * @return			Current mode.
+ *
+ * @note			See mode defines.
+ */
+native int HNS_GetMode();
+
+/**
+ * Called when CT freeze countdown ended.
+ */
+forward void HNS_OnCountdownEnd();
+
 public SharedPlugin __pl_hidenseek = 
 {
 	name = "hidenseek",
@@ -14,21 +38,10 @@ public SharedPlugin __pl_hidenseek =
 #endif
 };
 
-/**
- * Check hidenseek plugin status.
- *
- * @return			If plugin enabled true, otherwise false.
- */
-native bool HNS_IsEnabled();
-
-/**
- * Called when CT freeze countdown ended.
- */
-forward void HNS_OnCountdownEnd();
-
-/*#if !defined REQUIRE_PLUGIN
+#if !defined REQUIRE_PLUGIN
 public __pl_hidenseek_SetNTVOptional()
 {
-	MarkNativeAsOptional("");
+	MarkNativeAsOptional("HNS_IsEnabled");
+	MarkNativeAsOptional("HNS_GetMode");
 }
-#endif*/
+#endif

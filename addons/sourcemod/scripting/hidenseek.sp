@@ -126,6 +126,10 @@
 
 #define RESPAWN_PROTECTION_TIME_ADDON 2.0
 
+// Mode Defines
+#define HNSMODE_NORMAL      0
+#define HNSMODE_RESPAWN     1
+
 public Plugin myinfo =
 {
     name = "HideNSeek",
@@ -321,6 +325,7 @@ int g_iaDefaultValues[] = {
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
     CreateNative("HNS_IsEnabled", Native_HNS_IsEnabled);
+    CreateNative("HNS_GetMode", Native_HNS_GetMode);
 
     RegPluginLibrary("hidenseek");
 
@@ -2256,4 +2261,14 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
 public int Native_HNS_IsEnabled(Handle plugin, int numParams)
 {
     return g_bEnabled;
+}
+
+public int Native_HNS_GetMode(Handle plugin, int numParams)
+{
+    /*if (g_bRespawnMode)
+        return HNSMODE_RESPAWN;
+
+    return HNSMODE_NORMAL;*/
+    
+    return g_bRespawnMode;
 }

@@ -14,6 +14,11 @@ public SharedPlugin __pl_hidenseek =
 #endif
 };
 
+/**
+ * Called when CT freeze countdown ended.
+ */
+forward void HNS_OnCountdownEnd();
+
 /*#if !defined REQUIRE_PLUGIN
 public __pl_hidenseek_SetNTVOptional()
 {

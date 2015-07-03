@@ -134,6 +134,9 @@ public Plugin myinfo =
     url = "steamcommunity.com/id/celofan"
 };
 
+//API vars
+Handle g_hOnCountdownEndForward;
+
 ConVar g_hEnabled;
 ConVar g_hCountdownTime;
 ConVar g_hCountdownFade;
@@ -325,6 +328,9 @@ public void OnPluginStart()
 {
     //Load Translations
     LoadTranslations("hidenseek.phrases");
+    
+    //Setup API
+    g_hOnCountdownEndForward = CreateGlobalForward("HNS_OnCountdownEnd", ET_Event);
 
     //ConVars here
     CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
@@ -735,7 +741,10 @@ public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
         }
         if(!g_bRespawnMode)
             g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
-    }
+        else
+            Call_HNS_OnCountdownEnd();
+    } else
+        Call_HNS_OnCountdownEnd();
     return;
 }
 
@@ -782,8 +791,15 @@ public Action ShowCountdownMessage(Handle hTimer, any iTarget)
         }
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hShowCountdownMessage = null;
+        Call_HNS_OnCountdownEnd();
         return Plugin_Stop;
     }
+}
+
+void Call_HNS_OnCountdownEnd()
+{
+    Call_StartForward(g_hOnCountdownEndForward);
+    Call_Finish();
 }
 
 public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)

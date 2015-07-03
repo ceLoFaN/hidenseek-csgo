@@ -2232,6 +2232,7 @@ public void OnAdminMenuReady(Handle topmenu)
     g_AdminMenu = AdminMenu;
     
     TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
+    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory);
     g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
 }
 
@@ -2244,17 +2245,27 @@ public void TopMenuHandler_HNSCategory(Handle topmenu, TopMenuAction action, Top
     }
 }
 
+public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
+{
+    switch (action) {
+        case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s HNS", g_bEnabled ? "off" : "on");
+        case TopMenuAction_SelectOption: {
+            PrintToChatAll("  \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
+            //SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
+            g_hEnabled.BoolValue = !g_bEnabled;
+        }
+    }
+}
+
 public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
 {
-    if (action == TopMenuAction_DisplayOption) {
-        Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
-    } 
-    else if (action == TopMenuAction_SelectOption) {
-        PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
-        SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
-//      char mapname[128];
-//      GetCurrentMap(mapname, 128);
-//        
+    switch (action) {
+        case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
+        case TopMenuAction_SelectOption: {
+            PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
+            //SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
+            g_hRespawnMode.BoolValue = !g_bRespawnMode;
+        }
     }
 }
 
@@ -2269,6 +2280,6 @@ public int Native_HNS_GetMode(Handle plugin, int numParams)
         return HNSMODE_RESPAWN;
 
     return HNSMODE_NORMAL;*/
-    
+
     return g_bRespawnMode;
 }

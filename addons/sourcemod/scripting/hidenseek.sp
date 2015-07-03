@@ -314,6 +314,13 @@ int g_iaDefaultValues[] = {
     64,       // mp_spectators_max
 };
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{    
+    RegPluginLibrary("hidenseek");
+    
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
     //Load Translations

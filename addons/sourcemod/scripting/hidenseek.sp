@@ -2251,8 +2251,8 @@ public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMe
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s HNS", g_bEnabled ? "off" : "on");
         case TopMenuAction_SelectOption: {
             PrintToChatAll("  \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
-            //SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
-            g_hEnabled.BoolValue = !g_bEnabled;
+            //g_hEnabled.BoolValue = !g_bEnabled; // This code dosen't work! BUG?!
+            SetConVarBool(g_hEnabled, !g_bEnabled);
         }
     }
 }
@@ -2263,8 +2263,8 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
         case TopMenuAction_SelectOption: {
             PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
-            //SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
-            g_hRespawnMode.BoolValue = !g_bRespawnMode;
+            //g_hRespawnMode.BoolValue = !g_bRespawnMode; // This code dosen't work! BUG?!
+            SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
         }
     }
 }

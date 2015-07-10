@@ -2232,7 +2232,7 @@ public void OnAdminMenuReady(Handle topmenu)
     g_AdminMenu = AdminMenu;
     
     TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
-    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory, _, ADMFLAG_CONVARS);
+    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory, _, ADMFLAG_ROOT);
     g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
 }
 
@@ -2251,8 +2251,10 @@ public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMe
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s HNS", g_bEnabled ? "off" : "on");
         case TopMenuAction_SelectOption: {
             PrintToChatAll("  \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
+            LogAction(param, -1, "%L turned %s Hide'N'Seek plugin.", g_bEnabled ? "off" : "on");
             //g_hEnabled.BoolValue = !g_bEnabled; // This code dosen't work! BUG?!
             SetConVarBool(g_hEnabled, !g_bEnabled);
+            
         }
     }
 }
@@ -2263,6 +2265,7 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
         case TopMenuAction_SelectOption: {
             PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
+            LogAction(param, -1, "%L setted Hide'N'Seek mode to %s.", g_bRespawnMode ? "Normal" : "Respawn");
             //g_hRespawnMode.BoolValue = !g_bRespawnMode; // This code dosen't work! BUG?!
             SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
         }

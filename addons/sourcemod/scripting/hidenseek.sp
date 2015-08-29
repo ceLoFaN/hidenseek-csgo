@@ -23,6 +23,7 @@
 #include <adminmenu>
 
 #pragma newdecls required
+#pragma semicolon 1
 
 #define PLUGIN_VERSION                "2.0.0-beta2"
 #define AUTHOR                        "ceLoFaN"
@@ -125,6 +126,10 @@
 
 #define RESPAWN_PROTECTION_TIME_ADDON 2.0
 
+// Mode Defines
+#define HNSMODE_NORMAL      0
+#define HNSMODE_RESPAWN     1
+
 public Plugin myinfo =
 {
     name = "HideNSeek",
@@ -133,6 +138,9 @@ public Plugin myinfo =
     version = PLUGIN_VERSION,
     url = "steamcommunity.com/id/celofan"
 };
+
+//API vars
+Handle g_hOnCountdownEndForward;
 
 ConVar g_hEnabled;
 ConVar g_hCountdownTime;
@@ -314,10 +322,23 @@ int g_iaDefaultValues[] = {
     64,       // mp_spectators_max
 };
 
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    CreateNative("HNS_IsEnabled", Native_HNS_IsEnabled);
+    CreateNative("HNS_GetMode", Native_HNS_GetMode);
+
+    RegPluginLibrary("hidenseek");
+
+    return APLRes_Success;
+}
+
 public void OnPluginStart()
 {
     //Load Translations
     LoadTranslations("hidenseek.phrases");
+    
+    //Setup API
+    g_hOnCountdownEndForward = CreateGlobalForward("HNS_OnCountdownEnd", ET_Event);
 
     //ConVars here
     CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
@@ -728,7 +749,10 @@ public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
         }
         if(!g_bRespawnMode)
             g_hStartCountdown = CreateTimer(fFraction, StartCountdown);
-    }
+        else
+            Call_HNS_OnCountdownEnd();
+    } else
+        Call_HNS_OnCountdownEnd();
     return;
 }
 
@@ -775,8 +799,15 @@ public Action ShowCountdownMessage(Handle hTimer, any iTarget)
         }
         //EmitSoundToAll(SOUND_GOGOGO);
         g_hShowCountdownMessage = null;
+        Call_HNS_OnCountdownEnd();
         return Plugin_Stop;
     }
+}
+
+void Call_HNS_OnCountdownEnd()
+{
+    Call_StartForward(g_hOnCountdownEndForward);
+    Call_Finish();
 }
 
 public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
@@ -1072,7 +1103,7 @@ public void OnClientDisconnect(int iClient)
 
     if(g_baFrozen[iClient]) {
         if(g_haFreezeTimer[iClient] != null) {
-            KillTimer(g_haFreezeTimer[iClient])
+            KillTimer(g_haFreezeTimer[iClient]);
             g_haFreezeTimer[iClient] = null;
         }
         g_baFrozen[iClient] = false;
@@ -2183,7 +2214,7 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     int iAttackerClient = GetClientOfUserId(iAttackerId);
     
     if(g_baRespawnProtection[iVictimClient] && iAttackerClient != 0) {
-        bDontBroadcast = true
+        bDontBroadcast = true;
         return Plugin_Changed;
     }
 
@@ -2201,6 +2232,7 @@ public void OnAdminMenuReady(Handle topmenu)
     g_AdminMenu = AdminMenu;
     
     TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
+    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory);
     g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
 }
 
@@ -2213,16 +2245,44 @@ public void TopMenuHandler_HNSCategory(Handle topmenu, TopMenuAction action, Top
     }
 }
 
+public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
+{
+    switch (action) {
+        case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s HNS", g_bEnabled ? "off" : "on");
+        case TopMenuAction_SelectOption: {
+            PrintToChatAll("  \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
+            LogAction(param, -1, "%L turned %s Hide'N'Seek plugin.", param, g_bEnabled ? "off" : "on");
+            //g_hEnabled.BoolValue = !g_bEnabled; // This code dosen't work! BUG?!
+            SetConVarBool(g_hEnabled, !g_bEnabled);
+            
+        }
+    }
+}
+
 public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
 {
-    if (action == TopMenuAction_DisplayOption) {
-        Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
-    } 
-    else if (action == TopMenuAction_SelectOption) {
-        PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
-        SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
-//      char mapname[128];
-//      GetCurrentMap(mapname, 128);
-//        
+    switch (action) {
+        case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
+        case TopMenuAction_SelectOption: {
+            PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
+            LogAction(param, -1, "%L setted Hide'N'Seek mode to %s.", param, g_bRespawnMode ? "Normal" : "Respawn");
+            //g_hRespawnMode.BoolValue = !g_bRespawnMode; // This code dosen't work! BUG?!
+            SetConVarBool(g_hRespawnMode, !g_bRespawnMode);
+        }
     }
+}
+
+public int Native_HNS_IsEnabled(Handle plugin, int numParams)
+{
+    return g_bEnabled;
+}
+
+public int Native_HNS_GetMode(Handle plugin, int numParams)
+{
+    /*if (g_bRespawnMode)
+        return HNSMODE_RESPAWN;
+
+    return HNSMODE_NORMAL;*/
+
+    return g_bRespawnMode;
 }

@@ -1631,8 +1631,8 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                         int iVictimTeamBalanceStatus = TeamBalanceStatus(CS_TEAM_CT);
                         if(iVictimTeamBalanceStatus & TEAM_NEEDS_NERF) {
                             g_baAvailableToSwap[iVictim] = true;
-                            CS_SwitchTeam(iAttacker, CS_TEAM_T);
-                            g_iaInitialTeamTrack[iAttacker] = CS_TEAM_T;
+                            CS_SwitchTeam(iVictim, CS_TEAM_T);
+                            g_iaInitialTeamTrack[iVictim] = CS_TEAM_T;
                             PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team T");
                         }
                         else {

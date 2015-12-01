@@ -341,8 +341,8 @@ public void OnPluginStart()
     g_hOnCountdownEndForward = CreateGlobalForward("HNS_OnCountdownEnd", ET_Event);
 
     //ConVars here
-    CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
-    g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY|FCVAR_PLUGIN, true, 0.0, true, 1.0);
+    CreateConVar("hidenseek_version", PLUGIN_VERSION, "Version of HideNSeek", FCVAR_SPONLY|FCVAR_DONTRECORD|FCVAR_REPLICATED|FCVAR_NOTIFY);
+    g_hEnabled = CreateConVar("hns_enabled", HIDENSEEK_ENABLED, "Turns the mod On/Off (0=OFF, 1=ON)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_hCountdownTime = CreateConVar("hns_countdown_time", COUNTDOWN_TIME, "The countdown duration during which CTs are frozen", _, true, 0.0, true, 15.0);
     g_hCountdownFade = CreateConVar("hns_countdown_fade", COUNTDOWN_FADE, "Fades the screen for CTs during countdown (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hRoundPoints = CreateConVar("hns_round_points", ROUND_POINTS, "Round points for every player in the winning team", _, true, 0.0);
@@ -821,7 +821,7 @@ public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
             int i;
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             int iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
-            DataPack hPack = new DataPack();
+            DataPack hPack;
             if(g_haInvisible[iClient] != null) 
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
@@ -1826,7 +1826,7 @@ float GetClientGrenadeChance(int iClient, int iGrenadeType)
     if(g_bRespawnMode) {
         int iPenaltyStacks = GetSuicidePenaltyStacks(iClient);
         if(iPenaltyStacks)
-            return g_faGrenadeChance[iGrenadeType] / view_as<float>iPenaltyStacks;
+            return g_faGrenadeChance[iGrenadeType] / float(iPenaltyStacks);
     }
 
     return g_faGrenadeChance[iGrenadeType];
@@ -1906,7 +1906,7 @@ stock void SwapTeams()
     }
 }
 
-stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
+stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
 {
     Handle hScreenFade = StartMessageOne("Fade", iClient);
     PbSetInt(hScreenFade, "duration", iDuration * 500);
@@ -2077,7 +2077,7 @@ stock void SilentUnfreeze(int iClient)
     ScreenFade(iClient);
 }
 
-stock void CreateBeamFollow(int iEntity, int iSprite, int iaColor[4] = {0, 0, 0, 255})
+stock void CreateBeamFollow(int iEntity, int iSprite, const int iaColor[4] = {0, 0, 0, 255})
 {
     TE_SetupBeamFollow(iEntity, iSprite, 0, 1.5, 3.0, 3.0, 2, iaColor);
     TE_SendToAll();
@@ -2089,7 +2089,7 @@ stock void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDu
     TE_SendToAll();
 }
 
-stock void LightCreate(float faCoord[3], float fDuration)   
+stock void LightCreate(const float faCoord[3], float fDuration)   
 {  
     int iEntity = CreateEntityByName("light_dynamic");
     DispatchKeyValue(iEntity, "inner_cone", "0");
@@ -2128,7 +2128,7 @@ stock int GetTeamPlayerCount(int iTeam)
     return iCount;
 }
 
-void DealDamage(int iVictim, int iDamage, int iAttacker = 0, int iDmgType = DMG_GENERIC, char[] sWeapon = "")
+void DealDamage(int iVictim, int iDamage, int iAttacker = 0, int iDmgType = DMG_GENERIC, const char[] sWeapon = "")
 {
     // thanks to pimpinjuice
     if(iVictim>0 && IsValidEdict(iVictim) && IsClientInGame(iVictim) && IsPlayerAlive(iVictim) && iDamage > 0)

@@ -76,6 +76,8 @@
 #define RESPAWN_ROUND_DURATION        "25"
 #define LOAD_SPAWNS_FROM_FILE         "1"
 #define SAVE_SPAWNS_TO_FILE           "1"
+#define FAST_KNIFE                    "0"
+#define WINS_FOR_FAST_KNIFE           "3"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -183,6 +185,8 @@ ConVar g_hWelcomeMessage;
 ConVar g_hDamageSlowdown;
 ConVar g_hLoadSpawnPointsFromFile;
 ConVar g_hSaveSpawnPointsToFile;
+ConVar g_hFastKnife;
+ConVar g_hWinsForFastKnife;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -217,6 +221,8 @@ bool g_bWelcomeMessage;
 bool g_bDamageSlowdown;
 bool g_bLoadSpawnPointsFromFile;
 int g_iSaveSpawnPointsToFile;
+int g_iFastKnife;
+int g_iWinsForFastKnife;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
@@ -383,6 +389,8 @@ public void OnPluginStart()
     g_hDamageSlowdown = CreateConVar("hns_damage_slowdown", DAMAGE_SLOWDOWN, "Toggles the slowdown from getting damage (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hLoadSpawnPointsFromFile = CreateConVar("hns_rm_load_respawn_points_from_file", LOAD_SPAWNS_FROM_FILE, "Load respawn points from file, if available (0=DSBL, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hSaveSpawnPointsToFile = CreateConVar("hns_rm_save_respawn_points_to_file", SAVE_SPAWNS_TO_FILE, "Save respawn points to file (0=DSBL, 1=ENBL, 2=ENBL&Override)", _, true, 0.0, true, 2.0);
+    g_hFastKnife = CreateConVar("hns_fast_knife", FAST_KNIFE, "Can use left-click knife (0=DIBS, 1=ENBL, 2=After X rounds in row for T)", _, true, 0.0, true, 2.0);
+    g_hWinsForFastKnife = CreateConVar("hns_wins_for_fast_knife", WINS_FOR_FAST_KNIFE, "Wins in row for allow fast knife if hns_fast_knife 2", _, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -427,6 +435,8 @@ public void OnPluginStart()
     g_hDamageSlowdown.AddChangeHook(OnCvarChange);
     g_hLoadSpawnPointsFromFile.AddChangeHook(OnCvarChange);
     g_hSaveSpawnPointsToFile.AddChangeHook(OnCvarChange);
+    g_hFastKnife.AddChangeHook(OnCvarChange);
+    g_hWinsForFastKnife.AddChangeHook(OnCvarChange);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -492,6 +502,8 @@ public void OnConfigsExecuted()
     g_bHideRadar = g_hHideRadar.BoolValue;
     g_bWelcomeMessage = g_hWelcomeMessage.BoolValue;
     g_bDamageSlowdown = g_hDamageSlowdown.BoolValue;
+    g_iFastKnife = g_hFastKnife.IntValue;
+    g_iWinsForFastKnife = g_hWinsForFastKnife.IntValue;
     
     g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
     g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
@@ -612,7 +624,11 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_rm_save_respawn_points_to_file", sConVarName))
         g_iSaveSpawnPointsToFile = hConVar.IntValue; else
     if (StrEqual("hns_rm_load_respawn_points_from_file", sConVarName))
-        g_bLoadSpawnPointsFromFile = hConVar.BoolValue;
+        g_bLoadSpawnPointsFromFile = hConVar.BoolValue; else
+    if (StrEqual("hns_fast_knife", sConVarName))
+        g_iFastKnife = hConVar.IntValue; else
+    if (StrEqual("hns_wins_for_fast_knife", sConVarName))
+        g_iWinsForFastKnife = hConVar.IntValue;
 }
 
 public void OnMapStart()
@@ -1745,11 +1761,13 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
         }
     }
     else if(GetClientTeam(iClient) == CS_TEAM_CT)
-        if (iButtons & (IN_ATTACK)) {
-            iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
-            iButtons |= IN_ATTACK2;
-            return Plugin_Changed;
-        }
+        if (iButtons & (IN_ATTACK))
+            if (g_iFastKnife == 0 || (g_iFastKnife == 2 && g_iTWinsInARow < g_iWinsForFastKnife)) {
+                    iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
+                    iButtons |= IN_ATTACK2;
+                    return Plugin_Changed;
+            }
+
     return Plugin_Continue;
 }
 
@@ -1762,7 +1780,8 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
     int iPoints;
     
     if(iWinningTeam == CS_TEAM_T) {
-        if(!g_iMaximumWinStreak || ++g_iTWinsInARow < g_iMaximumWinStreak)
+        g_iTWinsInARow++;
+        if(!g_iMaximumWinStreak || g_iTWinsInARow < g_iMaximumWinStreak)
             PrintToChatAll("  \x04[HNS] %t", "T Win");
         else {
             SwapTeams();

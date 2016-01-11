@@ -25,7 +25,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PLUGIN_VERSION                "2.0.0-beta2"
+#define PLUGIN_VERSION                "2.0.0-beta3"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"
@@ -98,7 +98,7 @@
 
 // In-game Team Defines
 #define JOINTEAM_RND       0
-#define JOINTEAM_SPEC      1    
+#define JOINTEAM_SPEC      1
 #define JOINTEAM_T         2
 #define JOINTEAM_CT        3
 
@@ -342,7 +342,7 @@ public void OnPluginStart()
 {
     //Load Translations
     LoadTranslations("hidenseek.phrases");
-    
+
     //Setup API
     g_hOnCountdownEndForward = CreateGlobalForward("HNS_OnCountdownEnd", ET_Event);
 
@@ -464,16 +464,16 @@ public void OnPluginStart()
     ServerCommand("mp_backup_round_file_last \"\"");
     ServerCommand("mp_backup_round_file_pattern \"\"");
     ServerCommand("mp_backup_round_auto 0");
-    
+
     // Radar hide. Get game folder name and do hook for css if it needed.
     GetGameFolderName(g_sGameDirName, 10);
     if(StrContains(g_sGameDirName, "cstrike") != -1)
         HookEvent("player_blind", OnPlayerFlash_Post);
-    
+
     TopMenu topmenu;
     if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
         OnAdminMenuReady(topmenu);
-    
+
     char sPath[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, sPath, sizeof(sPath), "data/hidenseek_spawns");
     if (!DirExists(sPath))
@@ -491,7 +491,7 @@ public void OnConfigsExecuted()
 
     g_iRoundPoints = g_hRoundPoints.IntValue;
     g_iBonusPointsMultiplier = g_hBonusPointsMultiplier.IntValue;
-    g_iMaximumWinStreak = g_hMaximumWinStreak.IntValue; 
+    g_iMaximumWinStreak = g_hMaximumWinStreak.IntValue;
     g_fBaseRespawnTime = g_hBaseRespawnTime.FloatValue;
     g_fInvisibilityDuration = g_hInvisibilityDuration.FloatValue;
     g_fInvisibilityBreakDistance = g_hInvisibilityBreakDistance.FloatValue + 64.0;
@@ -504,7 +504,7 @@ public void OnConfigsExecuted()
     g_bDamageSlowdown = g_hDamageSlowdown.BoolValue;
     g_iFastKnife = g_hFastKnife.IntValue;
     g_iWinsForFastKnife = g_hWinsForFastKnife.IntValue;
-    
+
     g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
     g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
     g_faGrenadeChance[NADE_SMOKE] = g_hSmokeGrenadeChance.FloatValue;
@@ -515,7 +515,7 @@ public void OnConfigsExecuted()
     g_iaGrenadeMaximumAmounts[NADE_SMOKE] = g_hSmokeGrenadeMaximumAmount.IntValue;
     g_iaGrenadeMaximumAmounts[NADE_DECOY] = g_hDecoyMaximumAmount.IntValue;
     g_iaGrenadeMaximumAmounts[NADE_HE] = g_hHEGrenadeMaximumAmount.IntValue;
-    
+
     g_iFlashBlindDisable = g_hFlashBlindDisable.IntValue;
     g_bBlockJoinTeam = g_hBlockJoinTeam.BoolValue;
     g_bFrostNades = g_hFrostNades.BoolValue;
@@ -640,7 +640,7 @@ public void OnMapStart()
     PrecacheSound(SOUND_UNFREEZE);
     PrecacheSound(SOUND_FROSTNADE_EXPLODE);
     PrecacheSound(SOUND_GOGOGO);
-    
+
     if (!g_iaGrenadeOffsets[0]) {
         int end = sizeof(g_saGrenadeWeaponNames);
         for (int i=0; i<end; i++) {
@@ -650,7 +650,7 @@ public void OnMapStart()
             AcceptEntityInput(entindex, "Kill");
         }
     }
-    
+
     g_fCountdownOverTime = 0.0;
     g_iaAlivePlayers[0] = 0; g_iaAlivePlayers[1] = 0;
 
@@ -660,10 +660,10 @@ public void OnMapStart()
 
     if(g_bEnabled) {
         SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
-    
+
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
-    
+
         CreateHostageRescue();    // Make sure T wins when the time runs out
         RemoveBombsites();
     }
@@ -703,7 +703,7 @@ public Action EnableRoundObjectives(Handle hTimer)
     g_hRoundTimer = null;
 }
 
-public Action RespawnDeadPlayersTimer(Handle hTimer) 
+public Action RespawnDeadPlayersTimer(Handle hTimer)
 {
     if(g_bRespawnMode) {
         for(int iClient = 1; iClient < MaxClients; iClient++) {
@@ -716,7 +716,7 @@ public Action RespawnDeadPlayersTimer(Handle hTimer)
     return Plugin_Continue;
 }
 
-public void OnMapEnd() 
+public void OnMapEnd()
 {
     for(int iClient = 1; iClient <= MaxClients; iClient++) {
         if(g_haFreezeTimer[iClient] != null) {
@@ -748,16 +748,16 @@ public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
         return;
 
     g_bBombFound = false;
-    
+
     float fFraction = g_fCountdownTime - RoundToFloor(g_fCountdownTime);
     g_fRoundStartTime = GetGameTime();
     g_fCountdownOverTime = g_fRoundStartTime + g_fCountdownTime + 0.1;
-    
+
     g_iTerroristsDeathCount = 0;
     g_iInitialTerroristsCount = GetTeamClientCount(CS_TEAM_T);
 
     RemoveHostages();
-    
+
     if(g_fCountdownTime > 0.0 && (g_fCountdownOverTime - GetGameTime() + 0.1) < g_fCountdownTime + 1.0) {
         if(g_hStartCountdown != null) {
             KillTimer(g_hStartCountdown);
@@ -829,7 +829,7 @@ void Call_HNS_OnCountdownEnd()
 public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
 {
     int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
-    int iWeapon = GetEntPropEnt(iClient, Prop_Data, "m_hActiveWeapon"); 
+    int iWeapon = GetEntPropEnt(iClient, Prop_Data, "m_hActiveWeapon");
     if(IsValidEntity(iWeapon)) {
         char sWeaponName[64];
         GetEntityClassname(iWeapon, sWeaponName, sizeof(sWeaponName));
@@ -838,7 +838,7 @@ public void OnWeaponFire(Event hEvent, const char[] name, bool dontBroadcast)
             for(i = 0; i < sizeof(g_saGrenadeWeaponNames) && !StrEqual(sWeaponName, g_saGrenadeWeaponNames[i]); i++) {}
             int iCount = GetEntProp(iClient, Prop_Send, "m_iAmmo", _, g_iaGrenadeOffsets[i]) - 1;
             DataPack hPack;
-            if(g_haInvisible[iClient] != null) 
+            if(g_haInvisible[iClient] != null)
                 BreakInvisibility(iClient, REASON_GRENADE);
             CreateDataTimer(0.2, SwapToNade, hPack);
             hPack.WriteCell(iClient);
@@ -901,7 +901,7 @@ public Action Command_ToggleKnife(int iClient, int args)
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         g_baToggleKnife[iClient] = !g_baToggleKnife[iClient];
         PrintToChat(iClient, "  \x04[HNS] %t", g_baToggleKnife[iClient] ? "Toggle Knife On" : "Toggle Knife Off");
-        
+
         int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
         if(!IsValidEntity(iWeapon))
             return Plugin_Handled;
@@ -913,7 +913,7 @@ public Action Command_ToggleKnife(int iClient, int args)
     return Plugin_Handled;
 }
 
-public bool PlayerCanDisappear(int iClient) 
+public bool PlayerCanDisappear(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -967,7 +967,7 @@ public void MakeClientInvisible(int iClient, float fDuration)
         KillTimer(g_haInvisible[iClient]);
     g_haInvisible[iClient] = CreateTimer(g_fInvisibilityDuration, MakeClientVisible, iClient, TIMER_FLAG_NO_MAPCHANGE);
     CreateTimer(0.5, CheckDistanceToEnemies, iClient, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
-}  
+}
 
 public Action MakeClientVisible(Handle hTimer, any iClient)
 {
@@ -1026,7 +1026,7 @@ public Action Hook_SetTransmit(int iClient, int iEntity)
 
 public void OnEntityCreated(int iEntity, const char[] sClassName)
 {
-    if(g_bEnabled) {    
+    if(g_bEnabled) {
         if(g_bFrostNades) {
             if(StrEqual(sClassName, "decoy_projectile")) {
                 SDKHook(iEntity, SDKHook_StartTouch, StartTouch_Decoy);
@@ -1037,7 +1037,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassName)
             }
         }
     }
-} 
+}
 
 public Action StartTouch_Decoy(int iEntity)
 {
@@ -1056,7 +1056,7 @@ public Action SpawnPost_Decoy(int iEntity)
         return Plugin_Continue;
     SetEntProp(iEntity, Prop_Data, "m_nNextThinkTick", -1);
     SetEntityRenderColor(iEntity, 20, 200, 255, 255);
-    
+
     int iRef = EntIndexToEntRef(iEntity);
     CreateTimer(1.5, DecoyDetonate, iRef);
     CreateTimer(0.5, Redo_Tick, iRef);
@@ -1083,10 +1083,10 @@ public Action DecoyDetonate(Handle hTimer, any iRef)
         int iThrower = GetEntPropEnt(iEntity, Prop_Send, "m_hThrower");
         AcceptEntityInput(iEntity, "Kill");
         int ThrowerTeam = GetClientTeam(iThrower);
-        
+
         for(int iClient = 1; iClient <= MaxClients; iClient++) {
             if(iThrower && IsClientInGame(iClient)) {
-                if(IsPlayerAlive(iClient) && !g_baRespawnProtection[iClient] && ((GetClientTeam(iClient) != ThrowerTeam) || 
+                if(IsPlayerAlive(iClient) && !g_baRespawnProtection[iClient] && ((GetClientTeam(iClient) != ThrowerTeam) ||
                 (g_bSelfFreeze && iClient == iThrower))) {
                     float targetCoord[3];
                     GetClientAbsOrigin(iClient, targetCoord);
@@ -1134,8 +1134,8 @@ public void OnClientDisconnect(int iClient)
         g_haSpawnGenerateTimer[iClient] = null;
     }
     g_baToggleKnife[iClient] = true;
-    
-   
+
+
     // Respawn Protection
     if(g_haRespawnProtectionTimer[iClient] != null) {
         KillTimer(g_haRespawnProtectionTimer[iClient]);
@@ -1169,7 +1169,7 @@ public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
         if(iTeam == CS_TEAM_T)
             MakeClientInvisible(iClient, g_fInvisibilityDuration);
     }
-    
+
     if(iTeam == CS_TEAM_CT) {
         // Respawn Protection
         g_baRespawnProtection[iClient] = true;
@@ -1179,7 +1179,7 @@ public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
     g_baDiedBecauseRespawning[iClient] = false;
 
     CreateTimer(0.1, OnPlayerSpawnDelay, iId);
-    
+
     CreateTimer(0.0, RemoveRadar, iClient);
 
     if(g_haSpawnGenerateTimer[iClient] != null) {
@@ -1188,7 +1188,7 @@ public void OnPlayerSpawn(Event hEvent, const char[] sName, bool bDontBroadcast)
     }
     if(!g_bEnoughRespawnPoints || !g_bLoadedSpawnPoints)
         g_haSpawnGenerateTimer[iClient] = CreateTimer(5.0, GenerateRandomSpawns, iClient, TIMER_REPEAT);
-    
+
     return;
 }
 
@@ -1215,7 +1215,7 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
     int iClient = GetClientOfUserId(iId);
     if(iClient == 0 || iClient > MaxClients)
         return Plugin_Continue;
-        
+
     if(IsClientInGame(iClient) && IsPlayerAlive(iClient)) {
         float fDefreezeTime = g_fCountdownOverTime - GetGameTime() + 0.1;
 
@@ -1230,11 +1230,11 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
             AcceptEntityInput(iEntity, "Kill");
             GivePlayerItem(iClient, sWeaponName);
         }
-        else 
+        else
             GivePlayerItem(iClient, "weapon_knife");        //prevents a visual bug
-            
+
         SetViewmodelVisibility(iClient, g_baToggleKnife[iClient]);  //might fix a game bug
-                
+
         if(g_baFrozen[iClient])
             SilentUnfreeze(iClient);
         int iWeapon = GetPlayerWeaponSlot(iClient, 2);
@@ -1288,7 +1288,7 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
                 }
                 g_haRespawnProtectionTimer[iClient] = CreateTimer(RESPAWN_PROTECTION_TIME_ADDON, RemoveRespawnProtection, iClient);
             }
-        }    
+        }
     }
     return Plugin_Continue;
 }
@@ -1339,7 +1339,7 @@ public void OnClientPutInServer(int iClient)
     SDKHook(iClient, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
     SDKHook(iClient, SDKHook_WeaponCanUse, OnWeaponCanUse);
     SDKHook(iClient, SDKHook_OnTakeDamage, OnTakeDamage);
-    
+
     g_baWelcomeMsgShown[iClient] = false;
 }
 
@@ -1479,9 +1479,9 @@ public void OnWeaponSwitchPost(int iClient, int iWeapon)
         else {
             SetClientSpeed(iClient, 1.0);
             if(IsWeaponKnife(sWeaponName))
-                SetViewmodelVisibility(iClient, g_baToggleKnife[iClient]); 
+                SetViewmodelVisibility(iClient, g_baToggleKnife[iClient]);
         }
-        
+
         float fCurrentTime = GetGameTime();
         if(fCurrentTime < g_fCountdownOverTime && !g_bRespawnMode) {
             SetEntPropFloat(iWeapon, Prop_Send, "m_flNextPrimaryAttack", g_fCountdownOverTime);
@@ -1583,15 +1583,15 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                 int iAttackerTeam = GetClientTeam(iAttacker);
                 if(iAttackerTeam == CS_TEAM_CT) {
                     SetEntProp(iAttacker, Prop_Send, "m_iAccount", 0);    //Make sure the player doesn't get the money
-                    CS_SetClientContributionScore(iAttacker, CS_GetClientContributionScore(iAttacker) + g_iBonusPointsMultiplier - 1); 
-                    char sNickname[MAX_NAME_LENGTH];                    
+                    CS_SetClientContributionScore(iAttacker, CS_GetClientContributionScore(iAttacker) + g_iBonusPointsMultiplier - 1);
+                    char sNickname[MAX_NAME_LENGTH];
                     GetClientName(iVictim, sNickname, sizeof(sNickname));
 
                     SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) - 1);
                     SetSuicidePenaltyStacks(iAttacker, GetSuicidePenaltyStacks(iAttacker) - 1);
-                    
+
                     if(!g_bRespawnMode)
-                        PrintToChat(iAttacker, "  \x04[HNS] %t", 
+                        PrintToChat(iAttacker, "  \x04[HNS] %t",
                             "Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
                     else {
                         g_baAvailableToSwap[iVictim] = false;
@@ -1610,7 +1610,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                         CancelPlayerRespawn(iAttacker);
                         RespawnPlayerLazy(iAttacker, 0.0 + RespawnPenaltyTime(iAttacker));
 
-                        PrintToChat(iAttacker, "  \x04[HNS] %t", 
+                        PrintToChat(iAttacker, "  \x04[HNS] %t",
                             "Killing Notify Attacker", sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
 
                         GetClientName(iAttacker, sNickname, sizeof(sNickname));
@@ -1672,7 +1672,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
     return;
 }
 
-public void TrySwapPlayers(int iClient) 
+public void TrySwapPlayers(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget++) {
@@ -1707,7 +1707,7 @@ public Action OnPlayerFlash(Event hEvent, const char[] sName, bool bDontBroadcas
         return Plugin_Continue;
     int iClient = GetClientOfUserId(hEvent.GetInt("userid"));
     int iTeam = GetClientTeam(iClient);
-    
+
     if(g_iFlashBlindDisable) {
         if(iTeam == CS_TEAM_T)
             SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
@@ -1715,10 +1715,10 @@ public Action OnPlayerFlash(Event hEvent, const char[] sName, bool bDontBroadcas
             if(g_iFlashBlindDisable == 2 && iTeam == CS_TEAM_SPECTATOR)
                 SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
     }
-    
+
     if(g_baRespawnProtection[iClient])
         SetEntPropFloat(iClient, Prop_Send, "m_flFlashMaxAlpha", 0.5);
-    
+
     return Plugin_Continue;
 }
 
@@ -1726,12 +1726,12 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
 {
     if(!g_bEnabled)
         return Plugin_Continue;
-    
+
     if(!g_bAttackWhileFrozen && g_baFrozen[iClient]) {
         iButtons &= ~(IN_ATTACK | IN_ATTACK2);
         return Plugin_Changed;
     }
-    
+
     if(g_haInvisible[iClient] != null)
         if(GetEntityMoveType(iClient) == MOVETYPE_LADDER)
             BreakInvisibility(iClient, REASON_LADDER);
@@ -1778,7 +1778,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
     int iWinningTeam = hEvent.GetInt("winner");
     int iCTScore = CS_GetTeamScore(CS_TEAM_CT);
     int iPoints;
-    
+
     if(iWinningTeam == CS_TEAM_T) {
         g_iTWinsInARow++;
         if(!g_iMaximumWinStreak || g_iTWinsInARow < g_iMaximumWinStreak)
@@ -1803,7 +1803,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
                         int iDivider = g_iInitialTerroristsCount - g_iTerroristsDeathCount;
                         if(iDivider < 1)
                             iDivider = 1; //getting the actual number of terrorists would be better
-                        iPoints = g_iBonusPointsMultiplier * g_iTerroristsDeathCount / iDivider;            
+                        iPoints = g_iBonusPointsMultiplier * g_iTerroristsDeathCount / iDivider;
                         CS_SetClientContributionScore(iClient, CS_GetClientContributionScore(iClient) + iPoints);
                         PrintToChat(iClient, "  \x04[HNS] %t", "Points For T Surviving and Win", iPoints, g_iRoundPoints);
                     }
@@ -2108,8 +2108,8 @@ stock void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDu
     TE_SendToAll();
 }
 
-stock void LightCreate(const float faCoord[3], float fDuration)   
-{  
+stock void LightCreate(const float faCoord[3], float fDuration)
+{
     int iEntity = CreateEntityByName("light_dynamic");
     DispatchKeyValue(iEntity, "inner_cone", "0");
     DispatchKeyValue(iEntity, "cone", "90");
@@ -2231,7 +2231,7 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     int iVictimClient = GetClientOfUserId(iVictimId);
     int iAttackerId = hEvent.GetInt("attacker");
     int iAttackerClient = GetClientOfUserId(iAttackerId);
-    
+
     if(g_baRespawnProtection[iVictimClient] && iAttackerClient != 0) {
         bDontBroadcast = true;
         return Plugin_Changed;
@@ -2249,7 +2249,7 @@ public void OnAdminMenuReady(Handle topmenu)
     if (AdminMenu == g_AdminMenu)
         return;
     g_AdminMenu = AdminMenu;
-    
+
     TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
     g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory);
     g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
@@ -2273,7 +2273,7 @@ public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMe
             LogAction(param, -1, "%L turned %s Hide'N'Seek plugin.", param, g_bEnabled ? "off" : "on");
             //g_hEnabled.BoolValue = !g_bEnabled; // This code dosen't work! BUG?!
             SetConVarBool(g_hEnabled, !g_bEnabled);
-            
+
         }
     }
 }

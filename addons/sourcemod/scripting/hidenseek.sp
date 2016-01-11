@@ -1521,7 +1521,7 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
     return Plugin_Continue;
 }
 
-int EnemyTeam(int iTeam)
+/* int EnemyTeam(int iTeam)
 {
     if(iTeam == CS_TEAM_CT)
         return CS_TEAM_T;
@@ -1529,7 +1529,7 @@ int EnemyTeam(int iTeam)
         return CS_TEAM_CT;
 
     return -1;
-}
+} */
 
 int TeamBalanceStatus(int iTeam)
 {

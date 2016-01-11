@@ -919,7 +919,7 @@ public Action Command_ToggleKnife(int iClient, int args)
     return Plugin_Handled;
 }
 
-public bool PlayerCanDisappear(int iClient)
+bool PlayerCanDisappear(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -959,12 +959,12 @@ public Action Command_Respawn(int iClient, int args)
     return Plugin_Handled;
 }
 
-public void SetViewmodelVisibility(int iClient, bool bVisible)
+void SetViewmodelVisibility(int iClient, bool bVisible)
 {
     SetEntProp(iClient, Prop_Send, "m_bDrawViewmodel", bVisible);
 }
 
-public void MakeClientInvisible(int iClient, float fDuration)
+void MakeClientInvisible(int iClient, float fDuration)
 {
     SDKHook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     PrintToChat(iClient, " \x04[HNS] %t", "Invisible On", fDuration);
@@ -983,7 +983,7 @@ public Action MakeClientVisible(Handle hTimer, any iClient)
         PrintToChat(iClient, " \x04[HNS] %t", "Invisible Off");
 }
 
-public void BreakInvisibility(int iClient, int iReason)
+void BreakInvisibility(int iClient, int iReason)
 {
     if(g_haInvisible[iClient] != null) {
         KillTimer(g_haInvisible[iClient]);
@@ -1299,7 +1299,7 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
     return Plugin_Continue;
 }
 
-public void GameModeSetup() {
+void GameModeSetup() {
     FindConVar("mp_randomspawn").BoolValue = g_bEnabled && g_bRespawnMode;
     if(g_bEnabled && g_bRespawnMode) {
         if(!g_iRoundDuration) {
@@ -1521,7 +1521,7 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
     return Plugin_Continue;
 }
 
-public int EnemyTeam(int iTeam)
+int EnemyTeam(int iTeam)
 {
     if(iTeam == CS_TEAM_CT)
         return CS_TEAM_T;
@@ -1531,7 +1531,7 @@ public int EnemyTeam(int iTeam)
     return -1;
 }
 
-public int TeamBalanceStatus(int iTeam)
+int TeamBalanceStatus(int iTeam)
 {
     int iStatus = 0;
     int iTeamTCount = GetTeamPlayerCount(CS_TEAM_CT);
@@ -1678,7 +1678,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
     return;
 }
 
-public void TrySwapPlayers(int iClient)
+void TrySwapPlayers(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget++) {
@@ -1839,7 +1839,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
     return;
 }
 
-stock void RemoveNades(int iClient)
+void RemoveNades(int iClient)
 {
     while(RemoveWeaponBySlot(iClient, 3)){}
     for(int i = 0; i < 6; i++)
@@ -1908,7 +1908,7 @@ stock void GiveGrenades(int iClient)
     }
 }
 
-stock void SwapTeams()
+void SwapTeams()
 {
     g_bTeamSwap = true;
     for(int iClient = 1; iClient < MaxClients; iClient++) {
@@ -1933,7 +1933,7 @@ stock void SwapTeams()
     g_bTeamSwap = false;
 }
 
-stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
+void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
 {
     Handle hScreenFade = StartMessageOne("Fade", iClient);
     PbSetInt(hScreenFade, "duration", iDuration * 500);
@@ -1943,7 +1943,7 @@ stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4
     EndMessage();
 }
 
-stock bool RemoveWeaponBySlot(int iClient, int iSlot)
+bool RemoveWeaponBySlot(int iClient, int iSlot)
 {
     int iEntity = GetPlayerWeaponSlot(iClient, iSlot);
     if(IsValidEdict(iEntity)) {
@@ -1954,7 +1954,7 @@ stock bool RemoveWeaponBySlot(int iClient, int iSlot)
     return false;
 }
 
-stock void CreateHostageRescue()
+void CreateHostageRescue()
 {
     int iEntity = -1;
     if((iEntity = FindEntityByClassname(iEntity, "func_hostage_rescue")) == -1) {
@@ -1965,21 +1965,21 @@ stock void CreateHostageRescue()
     }
 }
 
-stock void RemoveHostages()
+void RemoveHostages()
 {
     int iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "hostage_entity")) != -1)     //Find hostages
         AcceptEntityInput(iEntity, "kill");
 }
 
-stock void RemoveBombsites()
+void RemoveBombsites()
 {
     int iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "func_bomb_target")) != -1)    //Find bombsites
         AcceptEntityInput(iEntity, "kill");    //Destroy the entity
 }
 
-stock void SetRoundTime(int iTime, bool bRestartRound = false)
+void SetRoundTime(int iTime, bool bRestartRound = false)
 {
     FindConVar("mp_roundtime_defuse").IntValue = 0;
     FindConVar("mp_roundtime_hostage").IntValue = 0;
@@ -1988,12 +1988,12 @@ stock void SetRoundTime(int iTime, bool bRestartRound = false)
         FindConVar("mp_restartgame").IntValue = 1;
 }
 
-stock bool IsWeaponKnife(const char[] sWeaponName)
+bool IsWeaponKnife(const char[] sWeaponName)
 {
     return StrContains(sWeaponName, "knife", false) != -1;
 }
 
-stock bool IsWeaponGrenade(const char[] sWeaponName)
+bool IsWeaponGrenade(const char[] sWeaponName)
 {
     for(int i = 0; i < sizeof(g_saGrenadeWeaponNames); i++)
         if(StrEqual(g_saGrenadeWeaponNames[i], sWeaponName))
@@ -2001,12 +2001,12 @@ stock bool IsWeaponGrenade(const char[] sWeaponName)
     return false;
 }
 
-stock void SetClientSpeed(int iClient, float speed)
+void SetClientSpeed(int iClient, float speed)
 {
     SetEntPropFloat(iClient, Prop_Send, "m_flLaggedMovementValue", speed);
 }
 
-stock void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
+void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
 {
     SetEntityMoveType(iClient, MOVETYPE_NONE);
     if(!g_bAttackWhileFrozen && (GetClientTeam(iClient) == CS_TEAM_CT)) {
@@ -2093,7 +2093,7 @@ public Action UnfreezeCountdown(Handle hTimer, any iClient)
     return Plugin_Continue;
 }
 
-stock void SilentUnfreeze(int iClient)
+void SilentUnfreeze(int iClient)
 {
     g_baFrozen[iClient] = false;
     SetEntityMoveType(iClient, MOVETYPE_WALK);
@@ -2104,19 +2104,19 @@ stock void SilentUnfreeze(int iClient)
     ScreenFade(iClient);
 }
 
-stock void CreateBeamFollow(int iEntity, int iSprite, const int iaColor[4] = {0, 0, 0, 255})
+void CreateBeamFollow(int iEntity, int iSprite, const int iaColor[4] = {0, 0, 0, 255})
 {
     TE_SetupBeamFollow(iEntity, iSprite, 0, 1.5, 3.0, 3.0, 2, iaColor);
     TE_SendToAll();
 }
 
-stock void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDuration)
+void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDuration)
 {
     TE_SetupGlowSprite(faCoord, iSprite, fDuration, 2.2, 180);
     TE_SendToAll();
 }
 
-stock void LightCreate(const float faCoord[3], float fDuration)
+void LightCreate(const float faCoord[3], float fDuration)
 {
     int iEntity = CreateEntityByName("light_dynamic");
     DispatchKeyValue(iEntity, "inner_cone", "0");
@@ -2134,7 +2134,7 @@ stock void LightCreate(const float faCoord[3], float fDuration)
     CreateTimer(fDuration, DeleteEntity, iEntity, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-stock void SetClientFrags(int iClient, int iFrags)
+void SetClientFrags(int iClient, int iFrags)
 {
     SetEntProp(iClient, Prop_Data, "m_iFrags", iFrags);
 }
@@ -2145,7 +2145,7 @@ public Action DeleteEntity(Handle hTimer, any iEntity)
         AcceptEntityInput(iEntity, "kill");
 }
 
-stock int GetTeamPlayerCount(int iTeam)
+int GetTeamPlayerCount(int iTeam)
 {
     int iCount = 0;
     for(int iClient = 1; iClient <= MaxClients; iClient++)
@@ -2232,7 +2232,7 @@ public Action OnPlayerTeam_Pre(Event hEvent, const char[] sName, bool bDontBroad
     return Plugin_Continue;
 }
 
-public void WriteWelcomeMessage(int iClient)
+void WriteWelcomeMessage(int iClient)
 {
     PrintToChat(iClient, " \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
 }

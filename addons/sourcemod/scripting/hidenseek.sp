@@ -460,10 +460,14 @@ public void OnPluginStart()
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
     RegConsoleCmd("respawn", Command_Respawn);
 
-    ServerCommand("mp_backup_round_file \"\"");
-    ServerCommand("mp_backup_round_file_last \"\"");
-    ServerCommand("mp_backup_round_file_pattern \"\"");
-    ServerCommand("mp_backup_round_auto 0");
+    // Don't work in 1.7 and fixed in 1.8
+    // FindConVar("mp_backup_round_file").SetString("");
+    // FindConVar("mp_backup_round_file_last").SetString("");
+    // FindConVar("mp_backup_round_file_pattern").SetString("");
+    SetConVarString(FindConVar("mp_backup_round_file"), "");
+    SetConVarString(FindConVar("mp_backup_round_file_last"), "");
+    SetConVarString(FindConVar("mp_backup_round_file_pattern"), "");
+    FindConVar("mp_backup_round_auto").IntValue = 0;
 
     // Radar hide. Get game folder name and do hook for css if it needed.
     GetGameFolderName(g_sGameDirName, 10);
@@ -656,10 +660,10 @@ public void OnMapStart()
 
     //Set some server ConVars
     for(int i = 0; i < sizeof(g_saPresetConVars); i++)
-        ServerCommand("sm_cvar %s %d", g_saPresetConVars[i], g_iaDefaultValues[i]);
+        FindConVar(g_saPresetConVars[i]).IntValue = g_iaDefaultValues[i];
 
     if(g_bEnabled) {
-        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
+        FindConVar("mp_autoteambalance").IntValue = 1; // this need to be changed for RM
 
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
@@ -699,7 +703,7 @@ public void OnMapTimeLeftChanged()
 
 public Action EnableRoundObjectives(Handle hTimer)
 {
-    SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+    FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
     g_hRoundTimer = null;
 }
 
@@ -736,7 +740,7 @@ public void OnMapEnd()
         g_hRoundTimer = null;
     }
     if(g_bRespawnMode) {
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
     }
     if(g_iSaveSpawnPointsToFile)
         SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile == 2);
@@ -1294,37 +1298,37 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
 }
 
 public void GameModeSetup() {
-    SetConVarBool(FindConVar("mp_randomspawn"), g_bEnabled && g_bRespawnMode);
+    FindConVar("mp_randomspawn").BoolValue = g_bEnabled && g_bRespawnMode;
     if(g_bEnabled && g_bRespawnMode) {
         if(!g_iRoundDuration) {
-            g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
+            g_iRoundDuration = FindConVar("mp_roundtime").IntValue;
             if(!g_iRoundDuration)
                 g_iRoundDuration = g_iRespawnRoundDuration;
         }
         if(!g_iMapRounds) {
-            g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));
+            g_iMapRounds = FindConVar("mp_maxrounds").IntValue;
         }
         if(!g_iMapTimelimit) {
-            g_iMapTimelimit = GetConVarInt(FindConVar("mp_timelimit"));
+            g_iMapTimelimit = FindConVar("mp_timelimit").IntValue;
         }
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
-        SetConVarInt(FindConVar("mp_maxrounds"), 1);
-        SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_death_drop_gun").IntValue = 0;
+        FindConVar("mp_death_drop_grenade").IntValue = 0;
+        FindConVar("mp_maxrounds").IntValue = 1;
+        FindConVar("mp_timelimit").IntValue = g_iRespawnRoundDuration;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
         SetRoundTime(g_iRespawnRoundDuration, true);
         for(int iClient = 0; iClient < MaxClients; iClient++) {
             ResetSuicidePenaltyStacks(iClient);
         }
     }
     else {
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+        FindConVar("mp_death_drop_gun").IntValue = 1;
+        FindConVar("mp_death_drop_grenade").IntValue = 1;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
         if(g_iMapRounds)
-            SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
+            FindConVar("mp_maxrounds").IntValue = g_iMapRounds;
         if(g_iMapTimelimit)
-            SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
+            FindConVar("mp_timelimit").IntValue = g_iMapTimelimit;
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
         if(g_hRoundTimer != null) {
@@ -1973,11 +1977,11 @@ stock void RemoveBombsites()
 
 stock void SetRoundTime(int iTime, bool bRestartRound = false)
 {
-    SetConVarInt(FindConVar("mp_roundtime_defuse"), 0);
-    SetConVarInt(FindConVar("mp_roundtime_hostage"), 0);
-    SetConVarInt(FindConVar("mp_roundtime"), iTime);
+    FindConVar("mp_roundtime_defuse").IntValue = 0;
+    FindConVar("mp_roundtime_hostage").IntValue = 0;
+    FindConVar("mp_roundtime").IntValue = iTime;
     if(bRestartRound)
-        SetConVarInt(FindConVar("mp_restartgame"), 1);
+        FindConVar("mp_restartgame").IntValue = 1;
 }
 
 stock bool IsWeaponKnife(const char[] sWeaponName)

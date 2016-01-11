@@ -25,7 +25,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PLUGIN_VERSION                "2.0.0-beta3"
+#define PLUGIN_VERSION                "2.0.0-beta4"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"

@@ -270,6 +270,7 @@ int g_iaInitialTeamTrack[MAXPLAYERS + 1] = {0, ...};
 int g_iaAlivePlayers[2] = {0, ...};
 int g_iTerroristsDeathCount;
 bool g_baWelcomeMsgShown[MAXPLAYERS + 1] = {false, ...};
+bool g_bTeamSwap;
 
 //Grenade consts
 char g_saGrenadeWeaponNames[][] = {
@@ -447,6 +448,7 @@ public void OnPluginStart()
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
+    HookEvent("player_team", OnPlayerTeam_Pre, EventHookMode_Pre);
     HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
@@ -1908,6 +1910,7 @@ stock void GiveGrenades(int iClient)
 
 stock void SwapTeams()
 {
+    g_bTeamSwap = true;
     for(int iClient = 1; iClient < MaxClients; iClient++) {
         if(IsClientInGame(iClient)) {
             int team = GetClientTeam(iClient);
@@ -1927,6 +1930,7 @@ stock void SwapTeams()
             }
         }
     }
+    g_bTeamSwap = false;
 }
 
 stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
@@ -2216,6 +2220,16 @@ public void OnPlayerTeam(Event hEvent, const char[] sName, bool bDontBroadcast)
         g_baWelcomeMsgShown[iClient] = true;
         WriteWelcomeMessage(iClient);
     }
+}
+
+public Action OnPlayerTeam_Pre(Event hEvent, const char[] sName, bool bDontBroadcast)
+{
+    if(g_bTeamSwap) {
+        hEvent.SetBool("silent", true);
+        return Plugin_Changed;
+    }
+
+    return Plugin_Continue;
 }
 
 public void WriteWelcomeMessage(int iClient)

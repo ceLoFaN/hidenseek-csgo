@@ -25,7 +25,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define PLUGIN_VERSION                "2.0.0-beta3"
+#define PLUGIN_VERSION                "2.0.0-beta4"
 #define AUTHOR                        "ceLoFaN"
 
 #include "hidenseek/penalties.sp"
@@ -270,6 +270,7 @@ int g_iaInitialTeamTrack[MAXPLAYERS + 1] = {0, ...};
 int g_iaAlivePlayers[2] = {0, ...};
 int g_iTerroristsDeathCount;
 bool g_baWelcomeMsgShown[MAXPLAYERS + 1] = {false, ...};
+bool g_bTeamSwap;
 
 //Grenade consts
 char g_saGrenadeWeaponNames[][] = {
@@ -447,6 +448,7 @@ public void OnPluginStart()
     HookEvent("player_blind", OnPlayerFlash, EventHookMode_Pre);
     HookEvent("weapon_fire", OnWeaponFire, EventHookMode_Pre);
     HookEvent("player_team", OnPlayerTeam);
+    HookEvent("player_team", OnPlayerTeam_Pre, EventHookMode_Pre);
     HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Pre);
 
     AddCommandListener(Command_JoinTeam, "jointeam");
@@ -460,10 +462,14 @@ public void OnPluginStart()
     RegConsoleCmd("toggleknife", Command_ToggleKnife);
     RegConsoleCmd("respawn", Command_Respawn);
 
-    ServerCommand("mp_backup_round_file \"\"");
-    ServerCommand("mp_backup_round_file_last \"\"");
-    ServerCommand("mp_backup_round_file_pattern \"\"");
-    ServerCommand("mp_backup_round_auto 0");
+    // Don't work in 1.7 and fixed in 1.8
+    // FindConVar("mp_backup_round_file").SetString("");
+    // FindConVar("mp_backup_round_file_last").SetString("");
+    // FindConVar("mp_backup_round_file_pattern").SetString("");
+    SetConVarString(FindConVar("mp_backup_round_file"), "");
+    SetConVarString(FindConVar("mp_backup_round_file_last"), "");
+    SetConVarString(FindConVar("mp_backup_round_file_pattern"), "");
+    FindConVar("mp_backup_round_auto").IntValue = 0;
 
     // Radar hide. Get game folder name and do hook for css if it needed.
     GetGameFolderName(g_sGameDirName, 10);
@@ -656,10 +662,10 @@ public void OnMapStart()
 
     //Set some server ConVars
     for(int i = 0; i < sizeof(g_saPresetConVars); i++)
-        ServerCommand("sm_cvar %s %d", g_saPresetConVars[i], g_iaDefaultValues[i]);
+        FindConVar(g_saPresetConVars[i]).IntValue = g_iaDefaultValues[i];
 
     if(g_bEnabled) {
-        SetConVarInt(FindConVar("mp_autoteambalance"), 1); // this need to be changed for RM
+        FindConVar("mp_autoteambalance").IntValue = 1; // this need to be changed for RM
 
         g_iTWinsInARow = 0;
         g_iConnectedClients = 0;
@@ -699,7 +705,7 @@ public void OnMapTimeLeftChanged()
 
 public Action EnableRoundObjectives(Handle hTimer)
 {
-    SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+    FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
     g_hRoundTimer = null;
 }
 
@@ -736,7 +742,7 @@ public void OnMapEnd()
         g_hRoundTimer = null;
     }
     if(g_bRespawnMode) {
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
     }
     if(g_iSaveSpawnPointsToFile)
         SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile == 2);
@@ -900,7 +906,7 @@ public Action Command_ToggleKnife(int iClient, int args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         g_baToggleKnife[iClient] = !g_baToggleKnife[iClient];
-        PrintToChat(iClient, "  \x04[HNS] %t", g_baToggleKnife[iClient] ? "Toggle Knife On" : "Toggle Knife Off");
+        PrintToChat(iClient, " \x04[HNS] %t", g_baToggleKnife[iClient] ? "Toggle Knife On" : "Toggle Knife Off");
 
         int iWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
         if(!IsValidEntity(iWeapon))
@@ -913,7 +919,7 @@ public Action Command_ToggleKnife(int iClient, int args)
     return Plugin_Handled;
 }
 
-public bool PlayerCanDisappear(int iClient)
+bool PlayerCanDisappear(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget ++) {
@@ -925,7 +931,7 @@ public bool PlayerCanDisappear(int iClient)
                 GetClientAbsOrigin(iTarget, faTargetCoord);
                 GetClientAbsOrigin(iClient, faClientCoord);
                 if(GetVectorDistance(faTargetCoord, faClientCoord) <= 500) {
-                    PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Enemy Near");
+                    PrintToChat(iClient, " \x04[HNS] %t", "Respawn Aborted Enemy Near");
                     return false;
                 }
             }
@@ -938,11 +944,11 @@ public Action Command_Respawn(int iClient, int args)
 {
     if(iClient > 0 && iClient <= MaxClients && IsClientInGame(iClient)) {
         if(!g_bRespawnMode)
-            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Off");
+            PrintToChat(iClient, " \x04[HNS] %t", "Respawn Aborted Off");
         else if(IsPlayerRespawning(iClient))
-            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted Alive");
+            PrintToChat(iClient, " \x04[HNS] %t", "Respawn Aborted Alive");
         else if(!(GetEntityFlags(iClient) & FL_ONGROUND))
-            PrintToChat(iClient, "  \x04[HNS] %t", "Respawn Aborted In Flight");
+            PrintToChat(iClient, " \x04[HNS] %t", "Respawn Aborted In Flight");
         else {
             if(PlayerCanDisappear(iClient)) {
                 Freeze(iClient, g_fBaseRespawnTime, FROSTNADE);
@@ -953,15 +959,15 @@ public Action Command_Respawn(int iClient, int args)
     return Plugin_Handled;
 }
 
-public void SetViewmodelVisibility(int iClient, bool bVisible)
+void SetViewmodelVisibility(int iClient, bool bVisible)
 {
     SetEntProp(iClient, Prop_Send, "m_bDrawViewmodel", bVisible);
 }
 
-public void MakeClientInvisible(int iClient, float fDuration)
+void MakeClientInvisible(int iClient, float fDuration)
 {
     SDKHook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
-    PrintToChat(iClient, "  \x04[HNS] %t", "Invisible On", fDuration);
+    PrintToChat(iClient, " \x04[HNS] %t", "Invisible On", fDuration);
 
     if(g_haInvisible[iClient] != null)
         KillTimer(g_haInvisible[iClient]);
@@ -974,21 +980,21 @@ public Action MakeClientVisible(Handle hTimer, any iClient)
     SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
     g_haInvisible[iClient] = null;
     if(IsPlayerAlive(iClient))
-        PrintToChat(iClient, "  \x04[HNS] %t", "Invisible Off");
+        PrintToChat(iClient, " \x04[HNS] %t", "Invisible Off");
 }
 
-public void BreakInvisibility(int iClient, int iReason)
+void BreakInvisibility(int iClient, int iReason)
 {
     if(g_haInvisible[iClient] != null) {
         KillTimer(g_haInvisible[iClient]);
         g_haInvisible[iClient] = null;
         SDKUnhook(iClient, SDKHook_SetTransmit, Hook_SetTransmit);
         if(iReason == REASON_ENEMY_TOO_CLOSE)
-            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Enemy Near");
+            PrintToChat(iClient, " \x04[HNS] %t", "Invisibility Broken Enemy Near");
         else if(iReason == REASON_LADDER)
-            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Climb");
+            PrintToChat(iClient, " \x04[HNS] %t", "Invisibility Broken Climb");
         else if(iReason == REASON_GRENADE)
-            PrintToChat(iClient, "  \x04[HNS] %t", "Invisibility Broken Threw Grenade");
+            PrintToChat(iClient, " \x04[HNS] %t", "Invisibility Broken Threw Grenade");
     }
 }
 
@@ -1293,38 +1299,38 @@ public Action OnPlayerSpawnDelay(Handle hTimer, any iId)
     return Plugin_Continue;
 }
 
-public void GameModeSetup() {
-    SetConVarBool(FindConVar("mp_randomspawn"), g_bEnabled && g_bRespawnMode);
+void GameModeSetup() {
+    FindConVar("mp_randomspawn").BoolValue = g_bEnabled && g_bRespawnMode;
     if(g_bEnabled && g_bRespawnMode) {
         if(!g_iRoundDuration) {
-            g_iRoundDuration = GetConVarInt(FindConVar("mp_roundtime"));
+            g_iRoundDuration = FindConVar("mp_roundtime").IntValue;
             if(!g_iRoundDuration)
                 g_iRoundDuration = g_iRespawnRoundDuration;
         }
         if(!g_iMapRounds) {
-            g_iMapRounds = GetConVarInt(FindConVar("mp_maxrounds"));
+            g_iMapRounds = FindConVar("mp_maxrounds").IntValue;
         }
         if(!g_iMapTimelimit) {
-            g_iMapTimelimit = GetConVarInt(FindConVar("mp_timelimit"));
+            g_iMapTimelimit = FindConVar("mp_timelimit").IntValue;
         }
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 0);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 0);
-        SetConVarInt(FindConVar("mp_maxrounds"), 1);
-        SetConVarInt(FindConVar("mp_timelimit"), g_iRespawnRoundDuration);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 1);
+        FindConVar("mp_death_drop_gun").IntValue = 0;
+        FindConVar("mp_death_drop_grenade").IntValue = 0;
+        FindConVar("mp_maxrounds").IntValue = 1;
+        FindConVar("mp_timelimit").IntValue = g_iRespawnRoundDuration;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 1;
         SetRoundTime(g_iRespawnRoundDuration, true);
         for(int iClient = 0; iClient < MaxClients; iClient++) {
             ResetSuicidePenaltyStacks(iClient);
         }
     }
     else {
-        SetConVarInt(FindConVar("mp_death_drop_gun"), 1);
-        SetConVarInt(FindConVar("mp_death_drop_grenade"), 1);
-        SetConVarInt(FindConVar("mp_ignore_round_win_conditions"), 0);
+        FindConVar("mp_death_drop_gun").IntValue = 1;
+        FindConVar("mp_death_drop_grenade").IntValue = 1;
+        FindConVar("mp_ignore_round_win_conditions").IntValue = 0;
         if(g_iMapRounds)
-            SetConVarInt(FindConVar("mp_maxrounds"), g_iMapRounds);
+            FindConVar("mp_maxrounds").IntValue = g_iMapRounds;
         if(g_iMapTimelimit)
-            SetConVarInt(FindConVar("mp_timelimit"), g_iMapTimelimit);
+            FindConVar("mp_timelimit").IntValue = g_iMapTimelimit;
         if(g_iRoundDuration)
             SetRoundTime(g_iRoundDuration, true);
         if(g_hRoundTimer != null) {
@@ -1348,7 +1354,7 @@ public Action HandlePlayerSpectateRequest(int iClient) {
     if(g_bRespawnMode) {
         if(iTeam == CS_TEAM_T)
             if(PlayerCanDisappear(iClient)) {
-                PrintToChat(iClient, "  \x04[HNS] %t", "Spectate Pending", 5.0, "s");
+                PrintToChat(iClient, " \x04[HNS] %t", "Spectate Pending", 5.0, "s");
                 CreateTimer(5.0, MovePlayerToSpectators, iClient, TIMER_FLAG_NO_MAPCHANGE);
                 return Plugin_Handled;
             }
@@ -1356,7 +1362,7 @@ public Action HandlePlayerSpectateRequest(int iClient) {
     else {
         if(iTeam == CS_TEAM_CT || CS_TEAM_T) {
             if(IsPlayerAlive(iClient)) {
-                PrintToConsole(iClient, "  \x04[HNS] %t", "Spectate Deny Alive");
+                PrintToConsole(iClient, "[HNS] %t", "Spectate Deny Alive");
                 return Plugin_Stop;
             }
             else {
@@ -1400,7 +1406,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
     if(iTeam == CS_TEAM_T || iTeam == CS_TEAM_CT) {
         if(iChosenTeam == JOINTEAM_T || iChosenTeam == JOINTEAM_CT || iChosenTeam == JOINTEAM_RND) {
             if(IsPlayerAlive(iClient)) {
-                PrintToChat(iClient, "  \x04[HNS] %t", "Team Change Deny Alive");
+                PrintToChat(iClient, " \x04[HNS] %t", "Team Change Deny Alive");
                 return Plugin_Stop;
             }
             else if(iDelta > iLimitTeams || -iDelta > iLimitTeams) {
@@ -1408,7 +1414,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
                 return Plugin_Continue;
             }
             else {
-                PrintToChat(iClient, "  \x04[HNS] %t", "Team Change Deny Balanced");
+                PrintToChat(iClient, " \x04[HNS] %t", "Team Change Deny Balanced");
                 return Plugin_Stop;
             }
         }
@@ -1416,7 +1422,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
             return HandlePlayerSpectateRequest(iClient);
         }
         else {
-            PrintToConsole(iClient, "  \x04[HNS] %T", "Invalid Team Console", iClient);
+            PrintToConsole(iClient, "[HNS] %T", "Invalid Team Console", iClient);
             return Plugin_Stop;
         }
     }
@@ -1428,7 +1434,7 @@ public Action Command_JoinTeam(int iClient, const char[] sCommand, int iArgCount
             return Plugin_Continue;
         }
         else if(g_iaInitialTeamTrack[iClient]) {
-            PrintToChat(iClient, "  \x04[HNS] %t", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "Assigned To Team T" : "Assigned To Team CT");
+            PrintToChat(iClient, " \x04[HNS] %t", (g_iaInitialTeamTrack[iClient] == CS_TEAM_T) ? "Assigned To Team T" : "Assigned To Team CT");
             CS_SwitchTeam(iClient, g_iaInitialTeamTrack[iClient]);
             return Plugin_Stop;
         }
@@ -1445,7 +1451,7 @@ public Action Command_Kill(int iClient, const char[] sCommand, int iArgCount)
         return Plugin_Continue;
     if (!g_bBlockConsoleKill || iClient == 0 || iClient > MaxClients)
         return Plugin_Continue;
-    PrintToConsole(iClient, "  \x04[HNS] %T", "Kill Deny", iClient);
+    PrintToConsole(iClient, "[HNS] %T", "Kill Deny", iClient);
     return Plugin_Stop;
 }
 
@@ -1515,7 +1521,7 @@ public Action OnTakeDamage(int iVictim, int &iAttacker, int &iInflictor, float &
     return Plugin_Continue;
 }
 
-public int EnemyTeam(int iTeam)
+/* int EnemyTeam(int iTeam)
 {
     if(iTeam == CS_TEAM_CT)
         return CS_TEAM_T;
@@ -1523,9 +1529,9 @@ public int EnemyTeam(int iTeam)
         return CS_TEAM_CT;
 
     return -1;
-}
+} */
 
-public int TeamBalanceStatus(int iTeam)
+int TeamBalanceStatus(int iTeam)
 {
     int iStatus = 0;
     int iTeamTCount = GetTeamPlayerCount(CS_TEAM_CT);
@@ -1591,7 +1597,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                     SetSuicidePenaltyStacks(iAttacker, GetSuicidePenaltyStacks(iAttacker) - 1);
 
                     if(!g_bRespawnMode)
-                        PrintToChat(iAttacker, "  \x04[HNS] %t",
+                        PrintToChat(iAttacker, " \x04[HNS] %t",
                             "Points For Killing", g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s", sNickname);
                     else {
                         g_baAvailableToSwap[iVictim] = false;
@@ -1610,11 +1616,11 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                         CancelPlayerRespawn(iAttacker);
                         RespawnPlayerLazy(iAttacker, 0.0 + RespawnPenaltyTime(iAttacker));
 
-                        PrintToChat(iAttacker, "  \x04[HNS] %t",
+                        PrintToChat(iAttacker, " \x04[HNS] %t",
                             "Killing Notify Attacker", sNickname, g_iBonusPointsMultiplier, (g_iBonusPointsMultiplier == 1) ? "" : "s");
 
                         GetClientName(iAttacker, sNickname, sizeof(sNickname));
-                        PrintToChat(iVictim, "  \x04[HNS] %t", "Killing Notify Victim", sNickname);
+                        PrintToChat(iVictim, " \x04[HNS] %t", "Killing Notify Victim", sNickname);
                     }
                 }
             }
@@ -1622,7 +1628,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                 SetSuicidePenaltyStacks(iVictim, GetSuicidePenaltyStacks(iVictim) + 1);
                 if(g_iSuicidePointsPenalty) {
                     CS_SetClientContributionScore(iVictim, CS_GetClientContributionScore(iVictim) - g_iSuicidePointsPenalty);
-                    PrintToChat(iVictim, "  \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
+                    PrintToChat(iVictim, " \x04[HNS] %t", "Died By Falling", g_iSuicidePointsPenalty);
                 }
                 if(g_bRespawnMode) {
                     if(!g_baDiedBecauseRespawning[iVictim]) {
@@ -1631,7 +1637,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                             g_baAvailableToSwap[iVictim] = true;
                             CS_SwitchTeam(iAttacker, CS_TEAM_CT);
                             g_iaInitialTeamTrack[iAttacker] = CS_TEAM_CT;
-                            PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team CT");
+                            PrintToChat(iVictim, " \x04[HNS] %t", "Assigned To Team CT");
                         }
                     }
                     else {
@@ -1649,7 +1655,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
                             g_baAvailableToSwap[iVictim] = true;
                             CS_SwitchTeam(iVictim, CS_TEAM_T);
                             g_iaInitialTeamTrack[iVictim] = CS_TEAM_T;
-                            PrintToChat(iVictim, "  \x04[HNS] %t", "Assigned To Team T");
+                            PrintToChat(iVictim, " \x04[HNS] %t", "Assigned To Team T");
                         }
                         else {
                             g_baAvailableToSwap[iVictim] = false;
@@ -1672,7 +1678,7 @@ public void OnPlayerDeath(Event hEvent, const char[] sName, bool bDontBroadcast)
     return;
 }
 
-public void TrySwapPlayers(int iClient)
+void TrySwapPlayers(int iClient)
 {
     int iClientTeam = GetClientTeam(iClient);
     for(int iTarget = 1; iTarget < MaxClients; iTarget++) {
@@ -1692,10 +1698,10 @@ public void TrySwapPlayers(int iClient)
 
                         char sNickname[MAX_NAME_LENGTH];
                         GetClientName(iTarget, sNickname, sizeof(sNickname));
-                        PrintToChat(iClient, "  \x04[HNS] %t", "Swapped", sNickname);
+                        PrintToChat(iClient, " \x04[HNS] %t", "Swapped", sNickname);
 
                         GetClientName(iClient, sNickname, sizeof(sNickname));
-                        PrintToChat(iTarget, "  \x04[HNS] %t", "Swapped", sNickname);
+                        PrintToChat(iTarget, " \x04[HNS] %t", "Swapped", sNickname);
                     }
             }
     }
@@ -1782,7 +1788,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
     if(iWinningTeam == CS_TEAM_T) {
         g_iTWinsInARow++;
         if(!g_iMaximumWinStreak || g_iTWinsInARow < g_iMaximumWinStreak)
-            PrintToChatAll("  \x04[HNS] %t", "T Win");
+            PrintToChatAll(" \x04[HNS] %t", "T Win");
         else {
             SwapTeams();
             g_iTWinsInARow = 0;
@@ -1792,7 +1798,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
             CS_SetTeamScore(CS_TEAM_T, iCTScore);
             SetTeamScore(CS_TEAM_T, iCTScore);
             if(g_iMaximumWinStreak)
-                PrintToChatAll("  \x04[HNS] %t", "T Win Team Swap");
+                PrintToChatAll(" \x04[HNS] %t", "T Win Team Swap");
         }
 
         for(int iClient = 1; iClient < MaxClients; iClient++) {
@@ -1805,10 +1811,10 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
                             iDivider = 1; //getting the actual number of terrorists would be better
                         iPoints = g_iBonusPointsMultiplier * g_iTerroristsDeathCount / iDivider;
                         CS_SetClientContributionScore(iClient, CS_GetClientContributionScore(iClient) + iPoints);
-                        PrintToChat(iClient, "  \x04[HNS] %t", "Points For T Surviving and Win", iPoints, g_iRoundPoints);
+                        PrintToChat(iClient, " \x04[HNS] %t", "Points For T Surviving and Win", iPoints, g_iRoundPoints);
                     }
                     else
-                        PrintToChat(iClient, "  \x04[HNS] %t", "Points For Win", g_iRoundPoints);
+                        PrintToChat(iClient, " \x04[HNS] %t", "Points For Win", g_iRoundPoints);
                 }
         }
     }
@@ -1818,11 +1824,11 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
             if(IsClientInGame(iClient))
                 if(GetClientTeam(iClient) == CS_TEAM_CT) {
                     CS_SetClientContributionScore(iClient, CS_GetClientContributionScore(iClient) + g_iRoundPoints);
-                    PrintToChat(iClient, "  \x04[HNS] %t", "Points For Win", g_iRoundPoints);
+                    PrintToChat(iClient, " \x04[HNS] %t", "Points For Win", g_iRoundPoints);
                 }
         }
         SwapTeams();
-        PrintToChatAll("  \x04[HNS] %t", "CT Win");
+        PrintToChatAll(" \x04[HNS] %t", "CT Win");
         g_iTWinsInARow = 0;
         //Set the team scores
         CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T));
@@ -1833,7 +1839,7 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
     return;
 }
 
-stock void RemoveNades(int iClient)
+void RemoveNades(int iClient)
 {
     while(RemoveWeaponBySlot(iClient, 3)){}
     for(int i = 0; i < 6; i++)
@@ -1873,7 +1879,7 @@ stock void GiveGrenades(int iClient)
     }
 
     if(iLastType == -1)
-        PrintToChat(iClient, "  \x04[HNS] %t", "No Grenades");
+        PrintToChat(iClient, " \x04[HNS] %t", "No Grenades");
     else {
         char sGrenadeMessage[256];
         for(int i = 0; i < sizeof(iaReceived); i++) {
@@ -1898,12 +1904,13 @@ stock void GiveGrenades(int iClient)
                     Format(sGrenadeMessage, sizeof(sGrenadeMessage), "%s%T", sGrenadeMessage, "Singular", iClient);
             }
         }
-        PrintToChat(iClient, "  \x04[HNS] %t", "Grenades Received", sGrenadeMessage);
+        PrintToChat(iClient, " \x04[HNS] %t", "Grenades Received", sGrenadeMessage);
     }
 }
 
-stock void SwapTeams()
+void SwapTeams()
 {
+    g_bTeamSwap = true;
     for(int iClient = 1; iClient < MaxClients; iClient++) {
         if(IsClientInGame(iClient)) {
             int team = GetClientTeam(iClient);
@@ -1923,9 +1930,10 @@ stock void SwapTeams()
             }
         }
     }
+    g_bTeamSwap = false;
 }
 
-stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
+void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4] = {0, 0, 0, 0}, int iDuration = 0, int iHoldTime = 0)
 {
     Handle hScreenFade = StartMessageOne("Fade", iClient);
     PbSetInt(hScreenFade, "duration", iDuration * 500);
@@ -1935,7 +1943,7 @@ stock void ScreenFade(int iClient, int iFlags = FFADE_PURGE, const int iaColor[4
     EndMessage();
 }
 
-stock bool RemoveWeaponBySlot(int iClient, int iSlot)
+bool RemoveWeaponBySlot(int iClient, int iSlot)
 {
     int iEntity = GetPlayerWeaponSlot(iClient, iSlot);
     if(IsValidEdict(iEntity)) {
@@ -1946,7 +1954,7 @@ stock bool RemoveWeaponBySlot(int iClient, int iSlot)
     return false;
 }
 
-stock void CreateHostageRescue()
+void CreateHostageRescue()
 {
     int iEntity = -1;
     if((iEntity = FindEntityByClassname(iEntity, "func_hostage_rescue")) == -1) {
@@ -1957,35 +1965,35 @@ stock void CreateHostageRescue()
     }
 }
 
-stock void RemoveHostages()
+void RemoveHostages()
 {
     int iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "hostage_entity")) != -1)     //Find hostages
         AcceptEntityInput(iEntity, "kill");
 }
 
-stock void RemoveBombsites()
+void RemoveBombsites()
 {
     int iEntity = -1;
     while((iEntity = FindEntityByClassname(iEntity, "func_bomb_target")) != -1)    //Find bombsites
         AcceptEntityInput(iEntity, "kill");    //Destroy the entity
 }
 
-stock void SetRoundTime(int iTime, bool bRestartRound = false)
+void SetRoundTime(int iTime, bool bRestartRound = false)
 {
-    SetConVarInt(FindConVar("mp_roundtime_defuse"), 0);
-    SetConVarInt(FindConVar("mp_roundtime_hostage"), 0);
-    SetConVarInt(FindConVar("mp_roundtime"), iTime);
+    FindConVar("mp_roundtime_defuse").IntValue = 0;
+    FindConVar("mp_roundtime_hostage").IntValue = 0;
+    FindConVar("mp_roundtime").IntValue = iTime;
     if(bRestartRound)
-        SetConVarInt(FindConVar("mp_restartgame"), 1);
+        FindConVar("mp_restartgame").IntValue = 1;
 }
 
-stock bool IsWeaponKnife(const char[] sWeaponName)
+bool IsWeaponKnife(const char[] sWeaponName)
 {
     return StrContains(sWeaponName, "knife", false) != -1;
 }
 
-stock bool IsWeaponGrenade(const char[] sWeaponName)
+bool IsWeaponGrenade(const char[] sWeaponName)
 {
     for(int i = 0; i < sizeof(g_saGrenadeWeaponNames); i++)
         if(StrEqual(g_saGrenadeWeaponNames[i], sWeaponName))
@@ -1993,12 +2001,12 @@ stock bool IsWeaponGrenade(const char[] sWeaponName)
     return false;
 }
 
-stock void SetClientSpeed(int iClient, float speed)
+void SetClientSpeed(int iClient, float speed)
 {
     SetEntPropFloat(iClient, Prop_Send, "m_flLaggedMovementValue", speed);
 }
 
-stock void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
+void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
 {
     SetEntityMoveType(iClient, MOVETYPE_NONE);
     if(!g_bAttackWhileFrozen && (GetClientTeam(iClient) == CS_TEAM_CT)) {
@@ -2017,16 +2025,16 @@ stock void Freeze(int iClient, float fDuration, int iType, int iAttacker = 0)
         LightCreate(coord, fDuration);
     }
     if(iAttacker == 0) {
-        PrintToChat(iClient, "  \x04[HNS] %t", "Frozen", fDuration);
+        PrintToChat(iClient, " \x04[HNS] %t", "Frozen", fDuration);
     }
     else if(iAttacker == iClient) {
-        PrintToChat(iClient, "  \x04[HNS] %t", "Frozen Yourself", fDuration);
+        PrintToChat(iClient, " \x04[HNS] %t", "Frozen Yourself", fDuration);
     }
     else if(iAttacker <= MaxClients) {
         if(IsClientInGame(iAttacker)) {
             char sAttackerName[MAX_NAME_LENGTH];
             GetClientName(iAttacker, sAttackerName, sizeof(sAttackerName));
-            PrintToChat(iClient, "  \x04[HNS] %t", "Frozen By", sAttackerName, fDuration);
+            PrintToChat(iClient, " \x04[HNS] %t", "Frozen By", sAttackerName, fDuration);
         }
     }
     if(g_baFrozen[iClient]) {
@@ -2067,7 +2075,7 @@ public Action Unfreeze(Handle hTimer, any iClient)
             GetClientEyePosition(iClient, faCoord);
             EmitAmbientSound(SOUND_UNFREEZE, faCoord, iClient, 55);
             if(IsPlayerAlive(iClient))
-                PrintToChat(iClient, "  \x04[HNS] %t", "Unfreeze");
+                PrintToChat(iClient, " \x04[HNS] %t", "Unfreeze");
         }
     }
     return Plugin_Continue;
@@ -2080,12 +2088,12 @@ public Action UnfreezeCountdown(Handle hTimer, any iClient)
         g_baFrozen[iClient] = false;
         g_haFreezeTimer[iClient] = null;
         if(IsPlayerAlive(iClient) && !g_bRespawnMode)
-            PrintToChat(iClient, "  \x04[HNS] %t", "Round Start");
+            PrintToChat(iClient, " \x04[HNS] %t", "Round Start");
     }
     return Plugin_Continue;
 }
 
-stock void SilentUnfreeze(int iClient)
+void SilentUnfreeze(int iClient)
 {
     g_baFrozen[iClient] = false;
     SetEntityMoveType(iClient, MOVETYPE_WALK);
@@ -2096,19 +2104,19 @@ stock void SilentUnfreeze(int iClient)
     ScreenFade(iClient);
 }
 
-stock void CreateBeamFollow(int iEntity, int iSprite, const int iaColor[4] = {0, 0, 0, 255})
+void CreateBeamFollow(int iEntity, int iSprite, const int iaColor[4] = {0, 0, 0, 255})
 {
     TE_SetupBeamFollow(iEntity, iSprite, 0, 1.5, 3.0, 3.0, 2, iaColor);
     TE_SendToAll();
 }
 
-stock void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDuration)
+void CreateGlowSprite(int iSprite, const float faCoord[3], const float fDuration)
 {
     TE_SetupGlowSprite(faCoord, iSprite, fDuration, 2.2, 180);
     TE_SendToAll();
 }
 
-stock void LightCreate(const float faCoord[3], float fDuration)
+void LightCreate(const float faCoord[3], float fDuration)
 {
     int iEntity = CreateEntityByName("light_dynamic");
     DispatchKeyValue(iEntity, "inner_cone", "0");
@@ -2126,7 +2134,7 @@ stock void LightCreate(const float faCoord[3], float fDuration)
     CreateTimer(fDuration, DeleteEntity, iEntity, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-stock void SetClientFrags(int iClient, int iFrags)
+void SetClientFrags(int iClient, int iFrags)
 {
     SetEntProp(iClient, Prop_Data, "m_iFrags", iFrags);
 }
@@ -2137,7 +2145,7 @@ public Action DeleteEntity(Handle hTimer, any iEntity)
         AcceptEntityInput(iEntity, "kill");
 }
 
-stock int GetTeamPlayerCount(int iTeam)
+int GetTeamPlayerCount(int iTeam)
 {
     int iCount = 0;
     for(int iClient = 1; iClient <= MaxClients; iClient++)
@@ -2214,9 +2222,19 @@ public void OnPlayerTeam(Event hEvent, const char[] sName, bool bDontBroadcast)
     }
 }
 
-public void WriteWelcomeMessage(int iClient)
+public Action OnPlayerTeam_Pre(Event hEvent, const char[] sName, bool bDontBroadcast)
 {
-    PrintToChat(iClient, "  \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
+    if(g_bTeamSwap) {
+        hEvent.SetBool("silent", true);
+        return Plugin_Changed;
+    }
+
+    return Plugin_Continue;
+}
+
+void WriteWelcomeMessage(int iClient)
+{
+    PrintToChat(iClient, " \x04[HNS] %t", "Welcome Msg", PLUGIN_VERSION, AUTHOR, g_bRespawnMode ? "Respawn Mode" : "Normal Mode");
 }
 
 public Action RemoveRespawnProtection(Handle hTimer, any iClient)
@@ -2269,7 +2287,7 @@ public void TopMenuHandler_HNSSwitch(Handle topmenu, TopMenuAction action, TopMe
     switch (action) {
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s HNS", g_bEnabled ? "off" : "on");
         case TopMenuAction_SelectOption: {
-            PrintToChatAll("  \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
+            PrintToChatAll(" \x04[HNS] Hide'N'Seek turned %s.", g_bEnabled ? "off" : "on");
             LogAction(param, -1, "%L turned %s Hide'N'Seek plugin.", param, g_bEnabled ? "off" : "on");
             //g_hEnabled.BoolValue = !g_bEnabled; // This code dosen't work! BUG?!
             SetConVarBool(g_hEnabled, !g_bEnabled);
@@ -2283,7 +2301,7 @@ public void TopMenuHandler_RMSwitch(Handle topmenu, TopMenuAction action, TopMen
     switch (action) {
         case TopMenuAction_DisplayOption: Format(buffer, maxlength, "Turn %s RespawnMode", g_bRespawnMode ? "off" : "on");
         case TopMenuAction_SelectOption: {
-            PrintToChatAll("  \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
+            PrintToChatAll(" \x04[HNS] Hide'N'Seek mode set to %s.", g_bRespawnMode ? "Normal" : "Respawn");
             LogAction(param, -1, "%L setted Hide'N'Seek mode to %s.", param, g_bRespawnMode ? "Normal" : "Respawn");
             //g_hRespawnMode.BoolValue = !g_bRespawnMode; // This code dosen't work! BUG?!
             SetConVarBool(g_hRespawnMode, !g_bRespawnMode);

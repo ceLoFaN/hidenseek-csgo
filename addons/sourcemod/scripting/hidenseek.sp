@@ -21,6 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <adminmenu>
+#include <clientprefs>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -191,6 +192,8 @@ ConVar g_hSaveSpawnPointsToFile;
 ConVar g_hFastKnife;
 ConVar g_hWinsForFastKnife;
 ConVar g_hGrenadeNoBlock;
+
+Handle g_hToggleKnifeCookie;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -446,6 +449,8 @@ public void OnPluginStart()
     g_hWinsForFastKnife.AddChangeHook(OnCvarChange);
     g_hGrenadeNoBlock.AddChangeHook(OnCvarChange);
 
+    g_hToggleKnifeCookie = RegClientCookie("hns_toggleknife", "Store toggleknife status.", CookieAccess_Private);
+
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
     HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
@@ -491,6 +496,11 @@ public void OnPluginStart()
     BuildPath(Path_SM, sPath, sizeof(sPath), "data/hidenseek_spawns");
     if (!DirExists(sPath))
         CreateDirectory(sPath, 511);
+}
+
+public void OnPluginEnd()
+{
+    delete g_hToggleKnifeCookie;
 }
 
 public void OnConfigsExecuted()
@@ -756,6 +766,17 @@ public void OnMapEnd()
     }
     if(g_iSaveSpawnPointsToFile)
         SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile == 2);
+}
+
+public void OnClientCookiesCached(int iClient)
+{
+    char sBuffer[2];
+    GetClientCookie(iClient, g_hToggleKnifeCookie, sBuffer, sizeof(sBuffer));
+    if (strlen(sBuffer) && IsCharNumeric(sBuffer[0])) {
+        int iToggleKnife = StringToInt(sBuffer);
+        if (iToggleKnife == 0 || iToggleKnife == 1)
+            g_baToggleKnife[iClient] = view_as<bool>(iToggleKnife);
+    }
 }
 
 public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
@@ -1054,7 +1075,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassName)
         }
         if(g_bGrenadeNoBlock)
             if (StrContains(sClassName, "_projectile") != -1)
-                CreateTimer(0.0, GrenadeThrown, iEntity);
+                CreateTimer(0.0, GrenadeThrown, EntIndexToEntRef(iEntity));
     }
 }
 
@@ -1121,8 +1142,9 @@ public Action DecoyDetonate(Handle hTimer, any iRef)
     }
 }
 
-public Action GrenadeThrown(Handle timer, any iEntity)
+public Action GrenadeThrown(Handle timer, any iEntityRef)
 {
+    int iEntity = EntRefToEntIndex(iEntityRef);
     if (IsValidEntity(iEntity))
         SetEntProp(iEntity, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_DEBRIS_TRIGGER);
 }
@@ -1158,6 +1180,9 @@ public void OnClientDisconnect(int iClient)
         KillTimer(g_haSpawnGenerateTimer[iClient]);
         g_haSpawnGenerateTimer[iClient] = null;
     }
+    char sBuffer[2];
+    IntToString(g_baToggleKnife[iClient], sBuffer, sizeof(sBuffer));
+    SetClientCookie(iClient, g_hToggleKnifeCookie, sBuffer);
     g_baToggleKnife[iClient] = true;
 
 

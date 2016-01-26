@@ -71,6 +71,7 @@
 #define FAST_KNIFE                    "0"
 #define WINS_FOR_FAST_KNIFE           "3"
 #define GRENADE_NO_BLOCK              "1"
+#define ALLOW_WEAPONS                 "0"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -192,6 +193,7 @@ ConVar g_hSaveSpawnPointsToFile;
 ConVar g_hFastKnife;
 ConVar g_hWinsForFastKnife;
 ConVar g_hGrenadeNoBlock;
+ConVar g_hAllowWeapons;
 
 Handle g_hToggleKnifeCookie;
 
@@ -231,6 +233,7 @@ int g_iSaveSpawnPointsToFile;
 int g_iFastKnife;
 int g_iWinsForFastKnife;
 bool g_bGrenadeNoBlock;
+bool g_bAllowWeapons;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
@@ -401,6 +404,7 @@ public void OnPluginStart()
     g_hFastKnife = CreateConVar("hns_fast_knife", FAST_KNIFE, "Can use left-click knife (0=DIBS, 1=ENBL, 2=After X rounds in row for T)", _, true, 0.0, true, 2.0);
     g_hWinsForFastKnife = CreateConVar("hns_wins_for_fast_knife", WINS_FOR_FAST_KNIFE, "Wins in row for allow fast knife if hns_fast_knife 2", _, true, 1.0);
     g_hGrenadeNoBlock = CreateConVar("hns_grenade_no_block", GRENADE_NO_BLOCK, "Grenades don't collide with players (0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hAllowWeapons = CreateConVar("hns_allow_weapons", ALLOW_WEAPONS, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -448,6 +452,7 @@ public void OnPluginStart()
     g_hFastKnife.AddChangeHook(OnCvarChange);
     g_hWinsForFastKnife.AddChangeHook(OnCvarChange);
     g_hGrenadeNoBlock.AddChangeHook(OnCvarChange);
+    g_hAllowWeapons.AddChangeHook(OnCvarChange);
 
     g_hToggleKnifeCookie = RegClientCookie("hns_toggleknife", "Store toggleknife status.", CookieAccess_Private);
 
@@ -528,6 +533,7 @@ public void OnConfigsExecuted()
     g_iFastKnife = g_hFastKnife.IntValue;
     g_iWinsForFastKnife = g_hWinsForFastKnife.IntValue;
     g_bGrenadeNoBlock = g_hGrenadeNoBlock.BoolValue;
+    g_bAllowWeapons = g_hAllowWeapons.BoolValue;
 
     g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
     g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
@@ -654,7 +660,9 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_wins_for_fast_knife", sConVarName))
         g_iWinsForFastKnife = hConVar.IntValue; else
     if (StrEqual("hns_grenade_no_block", sConVarName))
-        g_bGrenadeNoBlock = hConVar.BoolValue;
+        g_bGrenadeNoBlock = hConVar.BoolValue; else
+    if (StrEqual("hns_allow_weapons", sConVarName))
+        g_bAllowWeapons = hConVar.BoolValue;
 }
 
 public void OnMapStart()
@@ -1512,8 +1520,9 @@ public void OnItemPickUp(Event hEvent, const char[] szName, bool bDontBroadcast)
             g_bBombFound = true;
             return;
         }
-    for(int i = 0; i < 2; i++)
-        RemoveWeaponBySlot(iClient, i);
+    if (!g_bAllowWeapons)
+        for(int i = 0; i < 2; i++)
+            RemoveWeaponBySlot(iClient, i);
     return;
 }
 
@@ -1811,12 +1820,19 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
         }
     }
     else if(GetClientTeam(iClient) == CS_TEAM_CT)
-        if (iButtons & (IN_ATTACK))
-            if (g_iFastKnife == 0 || (g_iFastKnife == 2 && g_iTWinsInARow < g_iWinsForFastKnife)) {
-                    iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
-                    iButtons |= IN_ATTACK2;
-                    return Plugin_Changed;
+        if (iButtons & (IN_ATTACK)) {
+            int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+            if(IsValidEntity(iActiveWeapon)) {
+                char sWeaponName[64];
+                GetEntityClassname(iActiveWeapon, sWeaponName, sizeof(sWeaponName));
+                if(IsWeaponKnife(sWeaponName))
+                    if (g_iFastKnife == 0 || (g_iFastKnife == 2 && g_iTWinsInARow < g_iWinsForFastKnife)) {
+                            iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
+                            iButtons |= IN_ATTACK2;
+                            return Plugin_Changed;
+                    }
             }
+        }
 
     return Plugin_Continue;
 }

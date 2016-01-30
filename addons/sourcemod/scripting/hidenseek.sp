@@ -21,6 +21,7 @@
 #include <sdkhooks>
 #include <cstrike>
 #include <adminmenu>
+#include <clientprefs>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -67,6 +68,10 @@
 #define HIDE_RADAR                    "1"
 #define WELCOME_MESSAGE               "1"
 #define DAMAGE_SLOWDOWN               "0"
+#define FAST_KNIFE                    "0"
+#define WINS_FOR_FAST_KNIFE           "3"
+#define GRENADE_NO_BLOCK              "1"
+#define ALLOW_WEAPONS                 "0"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -76,8 +81,6 @@
 #define RESPAWN_ROUND_DURATION        "25"
 #define LOAD_SPAWNS_FROM_FILE         "1"
 #define SAVE_SPAWNS_TO_FILE           "1"
-#define FAST_KNIFE                    "0"
-#define WINS_FOR_FAST_KNIFE           "3"
 
 // Fade Defines
 #define FFADE_IN               0x0001
@@ -127,6 +130,8 @@
 #define HIDE_RADAR_CSGO 1<<12
 
 #define RESPAWN_PROTECTION_TIME_ADDON 2.0
+
+#define COLLISION_GROUP_DEBRIS_TRIGGER 2 // from public/const.h
 
 // Mode Defines
 #define HNSMODE_NORMAL      0
@@ -187,6 +192,10 @@ ConVar g_hLoadSpawnPointsFromFile;
 ConVar g_hSaveSpawnPointsToFile;
 ConVar g_hFastKnife;
 ConVar g_hWinsForFastKnife;
+ConVar g_hGrenadeNoBlock;
+ConVar g_hAllowWeapons;
+
+Handle g_hToggleKnifeCookie;
 
 bool g_bEnabled;
 float g_fCountdownTime;
@@ -223,6 +232,8 @@ bool g_bLoadSpawnPointsFromFile;
 int g_iSaveSpawnPointsToFile;
 int g_iFastKnife;
 int g_iWinsForFastKnife;
+bool g_bGrenadeNoBlock;
+bool g_bAllowWeapons;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
@@ -392,6 +403,8 @@ public void OnPluginStart()
     g_hSaveSpawnPointsToFile = CreateConVar("hns_rm_save_respawn_points_to_file", SAVE_SPAWNS_TO_FILE, "Save respawn points to file (0=DSBL, 1=ENBL, 2=ENBL&Override)", _, true, 0.0, true, 2.0);
     g_hFastKnife = CreateConVar("hns_fast_knife", FAST_KNIFE, "Can use left-click knife (0=DIBS, 1=ENBL, 2=After X rounds in row for T)", _, true, 0.0, true, 2.0);
     g_hWinsForFastKnife = CreateConVar("hns_wins_for_fast_knife", WINS_FOR_FAST_KNIFE, "Wins in row for allow fast knife if hns_fast_knife 2", _, true, 1.0);
+    g_hGrenadeNoBlock = CreateConVar("hns_grenade_no_block", GRENADE_NO_BLOCK, "Grenades don't collide with players (0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
+    g_hAllowWeapons = CreateConVar("hns_allow_weapons", ALLOW_WEAPONS, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -438,6 +451,10 @@ public void OnPluginStart()
     g_hSaveSpawnPointsToFile.AddChangeHook(OnCvarChange);
     g_hFastKnife.AddChangeHook(OnCvarChange);
     g_hWinsForFastKnife.AddChangeHook(OnCvarChange);
+    g_hGrenadeNoBlock.AddChangeHook(OnCvarChange);
+    g_hAllowWeapons.AddChangeHook(OnCvarChange);
+
+    g_hToggleKnifeCookie = RegClientCookie("hns_toggleknife", "Store toggleknife status.", CookieAccess_Private);
 
     //Hooked'em
     HookEvent("player_spawn", OnPlayerSpawn);
@@ -486,6 +503,11 @@ public void OnPluginStart()
         CreateDirectory(sPath, 511);
 }
 
+public void OnPluginEnd()
+{
+    delete g_hToggleKnifeCookie;
+}
+
 public void OnConfigsExecuted()
 {
     g_bEnabled = g_hEnabled.BoolValue;
@@ -510,6 +532,8 @@ public void OnConfigsExecuted()
     g_bDamageSlowdown = g_hDamageSlowdown.BoolValue;
     g_iFastKnife = g_hFastKnife.IntValue;
     g_iWinsForFastKnife = g_hWinsForFastKnife.IntValue;
+    g_bGrenadeNoBlock = g_hGrenadeNoBlock.BoolValue;
+    g_bAllowWeapons = g_hAllowWeapons.BoolValue;
 
     g_faGrenadeChance[NADE_FLASHBANG] = g_hFlashbangChance.FloatValue;
     g_faGrenadeChance[NADE_MOLOTOV] = g_hMolotovChance.FloatValue;
@@ -634,7 +658,11 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_fast_knife", sConVarName))
         g_iFastKnife = hConVar.IntValue; else
     if (StrEqual("hns_wins_for_fast_knife", sConVarName))
-        g_iWinsForFastKnife = hConVar.IntValue;
+        g_iWinsForFastKnife = hConVar.IntValue; else
+    if (StrEqual("hns_grenade_no_block", sConVarName))
+        g_bGrenadeNoBlock = hConVar.BoolValue; else
+    if (StrEqual("hns_allow_weapons", sConVarName))
+        g_bAllowWeapons = hConVar.BoolValue;
 }
 
 public void OnMapStart()
@@ -746,6 +774,17 @@ public void OnMapEnd()
     }
     if(g_iSaveSpawnPointsToFile)
         SaveSpawnPointsToFile(g_iSaveSpawnPointsToFile == 2);
+}
+
+public void OnClientCookiesCached(int iClient)
+{
+    char sBuffer[2];
+    GetClientCookie(iClient, g_hToggleKnifeCookie, sBuffer, sizeof(sBuffer));
+    if (strlen(sBuffer) && IsCharNumeric(sBuffer[0])) {
+        int iToggleKnife = StringToInt(sBuffer);
+        if (iToggleKnife == 0 || iToggleKnife == 1)
+            g_baToggleKnife[iClient] = view_as<bool>(iToggleKnife);
+    }
 }
 
 public void OnRoundStart(Event hEvent, const char[] sName, bool dontBroadcast)
@@ -1042,6 +1081,9 @@ public void OnEntityCreated(int iEntity, const char[] sClassName)
                     CreateBeamFollow(iEntity, g_iBeamSprite, FROST_COLOR);
             }
         }
+        if(g_bGrenadeNoBlock)
+            if (StrContains(sClassName, "_projectile") != -1)
+                CreateTimer(0.0, GrenadeThrown, EntIndexToEntRef(iEntity));
     }
 }
 
@@ -1108,6 +1150,13 @@ public Action DecoyDetonate(Handle hTimer, any iRef)
     }
 }
 
+public Action GrenadeThrown(Handle timer, any iEntityRef)
+{
+    int iEntity = EntRefToEntIndex(iEntityRef);
+    if (IsValidEntity(iEntity))
+        SetEntProp(iEntity, Prop_Send, "m_CollisionGroup", COLLISION_GROUP_DEBRIS_TRIGGER);
+}
+
 public void OnClientConnected(int iClient)
 {
     g_iConnectedClients++;
@@ -1139,6 +1188,9 @@ public void OnClientDisconnect(int iClient)
         KillTimer(g_haSpawnGenerateTimer[iClient]);
         g_haSpawnGenerateTimer[iClient] = null;
     }
+    char sBuffer[2];
+    IntToString(g_baToggleKnife[iClient], sBuffer, sizeof(sBuffer));
+    SetClientCookie(iClient, g_hToggleKnifeCookie, sBuffer);
     g_baToggleKnife[iClient] = true;
 
 
@@ -1468,8 +1520,9 @@ public void OnItemPickUp(Event hEvent, const char[] szName, bool bDontBroadcast)
             g_bBombFound = true;
             return;
         }
-    for(int i = 0; i < 2; i++)
-        RemoveWeaponBySlot(iClient, i);
+    if (!g_bAllowWeapons)
+        for(int i = 0; i < 2; i++)
+            RemoveWeaponBySlot(iClient, i);
     return;
 }
 
@@ -1767,12 +1820,19 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
         }
     }
     else if(GetClientTeam(iClient) == CS_TEAM_CT)
-        if (iButtons & (IN_ATTACK))
-            if (g_iFastKnife == 0 || (g_iFastKnife == 2 && g_iTWinsInARow < g_iWinsForFastKnife)) {
-                    iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
-                    iButtons |= IN_ATTACK2;
-                    return Plugin_Changed;
+        if (iButtons & (IN_ATTACK)) {
+            int iActiveWeapon = GetEntPropEnt(iClient, Prop_Send, "m_hActiveWeapon");
+            if(IsValidEntity(iActiveWeapon)) {
+                char sWeaponName[64];
+                GetEntityClassname(iActiveWeapon, sWeaponName, sizeof(sWeaponName));
+                if(IsWeaponKnife(sWeaponName))
+                    if (g_iFastKnife == 0 || (g_iFastKnife == 2 && g_iTWinsInARow < g_iWinsForFastKnife)) {
+                            iButtons &= ~(IN_ATTACK);    //Block attack1 for CTs but use attack2 instead
+                            iButtons |= IN_ATTACK2;
+                            return Plugin_Changed;
+                    }
             }
+        }
 
     return Plugin_Continue;
 }
@@ -2269,8 +2329,8 @@ public void OnAdminMenuReady(Handle topmenu)
     g_AdminMenu = AdminMenu;
 
     TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
-    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory);
-    g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory);
+    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory, _, ADMFLAG_CONVARS);
+    g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory, _, ADMFLAG_CONVARS);
 }
 
 public void TopMenuHandler_HNSCategory(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)

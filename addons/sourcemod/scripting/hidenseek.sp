@@ -2328,7 +2328,7 @@ public void OnAdminMenuReady(Handle topmenu)
         return;
     g_AdminMenu = AdminMenu;
 
-    TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory);
+    TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory, "sm_hidenseek_amenu");
     g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory, _, ADMFLAG_CONVARS);
     g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory, _, ADMFLAG_CONVARS);
 }

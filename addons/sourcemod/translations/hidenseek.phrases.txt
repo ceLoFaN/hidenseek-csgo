@@ -1,4 +1,4 @@
-﻿"Phrases"
+"Phrases"
 {
 	//Chat phrases
 
@@ -6,36 +6,41 @@
 	{
 		"en"			"Your knife is now on."
 		"ru"			"Отображение ножа включено."
+		"es"			"Tu cuchillo esta habilitado ahora."
 	}
 	
 	"Toggle Knife Off" // For toggleknife cmd
 	{
 		"en"			"Your knife is now off."
-		"ru"			"Отображение ножа выключено."
+		"ru"			"Отображение ножа выключено."				"es"			"Tu cuchillo esta desabilitado ahora."
 	}
 	
 	"Respawn Aborted Off"
 	{
 		"en"			"You can't respawn if the server is not running Respawn Mode."
 		"ru"			"Вы не можете возродиться, когда Респаун режим отключен."
+		"es"			"Tu no puedes revivir si el servidor no tiene activado Modo Revivir."
 	}
 	
 	"Respawn Aborted Alive"
 	{
 		"en"			"You are already respawning."
 		"ru"			"Вы уже возродились."
+		"es"			"Tu ya estas vivo."
 	}
 	
 	"Respawn Aborted In Flight"
 	{
 		"en"			"You must be on the ground in order to use this command."
 		"ru"			"Вы должны быть на земле, чтобы использовать команду."
+		"es"			"Tu debes estar en el suelo para usar este comando."
 	}
 	
 	"Respawn Aborted Enemy Near"
 	{
 		"en"			"You are too close to an enemy to use this command."
 		"ru"			"Вы не можете использовать команду рядом с противником."
+		"es"			"Tu estas muy cerca de un enemigo para usar este comando."
 	}
 	
 	"Invisible On"
@@ -43,54 +48,63 @@
 		"#format"		"{1:.1f}"
 		"en"			"You are now invisible for {1} seconds."
 		"ru"			"Вы будете невидимы в течение {1} секунд."
+		"es"			"Tu eres invisible ahora por {1} segundos."
 	}
 	
 	"Invisible Off"
 	{
 		"en"			"You are now visible again."
 		"ru"			"Вы снова видимы."
+		"es"			"Tu eres visible nuevamente."
 	}
 	
 	"Invisibility Broken Enemy Near"
 	{
 		"en"			"You got too close to an enemy and your invisibility was broken."
 		"ru"			"Невидимость пропала т.к. вы подошли слишком близко к противнику."
+		"es"			"Tu estas muy cerca de un enemigo y tu invisibilidad esta dañada."
 	}
 	
 	"Invisibility Broken Climb"
 	{
-		"en"			"You are no longer invisibile because you climbed a ladder."
+		"en"			"You are no longer invisible because you climbed a ladder."
 		"ru"			"Невидимость пропала т.к. вы залезли на лестницу."
+		"es"			"Tu no eres mas invisible porque subiste una escalera."
 	}
 	
 	"Invisibility Broken Threw Grenade"
 	{
-		"en"			"You are no longer invisibile because you threw a grenade."
+		"en"			"You are no longer invisible because you threw a grenade."
 		"ru"			"Невидимость пропала т.к. вы кинули гранату."
+		"es"			"Tu ya no eres mas invisible porque tiraste una granada."
 	}
 	
 	"Team Change Deny Alive"
 	{
 		"en"			"You are not allowed to change teams while you're alive."
 		"ru"			"Вы не можете сменить команду, пока живы."
+		"es"			"Tu no estas permitido para cambiar de equipos cuando estas vivo."
 	}
 	
 	"Team Change Deny Balanced"
 	{
 		"en"			"You are not allowed to change teams while they're balanced."
 		"ru"			"Команды сбалансированы. Вы не можете сменить команду."
+		"es"			"Tu no estas permitido para cambiar de equipos cuando ya estan balanceados."
 	}
 	
 	"Assigned To Team T"
 	{
 		"en"			"You have been assigned to team T."
 		"ru"			"Вас перевели в команду террористов."
+		"es"			"Tu has sido asignado al team T."
 	}
 	
 	"Assigned To Team CT"
 	{
 		"en"			"You have been assigned to team CT."
 		"ru"			"Вас перевели в команду спецназа."
+		"es"			"Tu has sido asignado al team CT."
 	}
 	
 	"Respawn Countdown"
@@ -98,12 +112,14 @@
 		"#format"		"{1:.1f}"
 		"en"			"You will respawn in {1} s."
 		"ru"			"Возрождение через {1} с."
+		"es"			"Tu vas a revivir en {1} s."
 	}
 	
 	"Invalid Team"
 	{
 		"en"			"You must choose a valid team in order to respawn."
 		"ru"			"Вы должны выбрать корректную команду для возможности возродиться."
+		"es"			"Tu debes elegir un equipo valido en orden para revivir."
 	}
 	
 	"Points For Killing"
@@ -111,6 +127,7 @@
 		"#format"		"{1:d},{2:s},{3:s}"
 		"en"			"You got {1} point{2} for killing {3}."
 		"ru"			"Получено {1} оч. за убийство {3}."
+		"es"			"Tu tienes {1} puntos{2} por matar {3}."
 	}
 	
 	"Killing Notify Attacker"
@@ -118,6 +135,7 @@
 		"#format"		"{1:s},{2:d},{3:s}"
 		"en"			"You killed {1} for {2} point{3} and you have swapped teams."
 		"ru"			"Вы убиты {1} получив {2} оч. Вас поменяют командами."
+		"es"			"Tu mataste {1} por {2} puntos{3} y has sido cambiado de equipo."
 	}
 	
 	"Killing Notify Victim"
@@ -125,6 +143,7 @@
 		"#format"		"{1:s}"
 		"en"			"You were killed by {1} and have swapped teams."
 		"ru"			"Вы убиты {1}. Вас поменяют командами."
+		"es"			"Tu has sido asesinado por {1} y han cambiado equipos."
 	}
 	
 	"Died By Falling"
@@ -132,6 +151,7 @@
 		"#format"		"{1:d}"
 		"en"			"You died by fall without an enemy assist. You lose {1} points."
 		"ru"			"Вы погибли от падения без чей-либо помощи. Потеряно {1} оч."
+		"es"			"Tu moriste callendo sin una asistencia enemiga. Tu pierdes {1} puntos."
 	}
 	
 	"Swapped"
@@ -139,18 +159,21 @@
 		"#format"		"{1:s}"
 		"en"			"You have switched teams with {1}."
 		"ru"			"Вы поменялись командами с {1}."
+		"es"			"Tu has cambiado equipos con {1}."
 	}
 	
 	"T Win"
 	{
 		"en"			"Terrorists won."
 		"ru"			"Террористы победили."
+		"es"			"Terroristas ganan."
 	}
 	
 	"T Win Team Swap"
 	{
 		"en"			"Ts have won too many rounds in a row. Teams have been swapped."
 		"ru"			"Террористы набрали серию побед. Команды меняются местами."
+		"es"			"Terroristas han ganado muchas rondas seguidas. Equipos han sido cambiados."
 	}
 	
 	"Points For T Surviving and Win"
@@ -158,6 +181,7 @@
 		"#format"		"{1:d},{2:d}"
 		"en"			"You got {1} points for surviving the round and {2} points for winning."
 		"ru"			"Получено {1} оч. за выживание и {2} оч. за победу."
+		"es"			"Tu obtienes {1} puntos por sobrevivir este round y {2} puntos por ganar."
 	}
 	
 	"Points For Win"
@@ -165,18 +189,21 @@
 		"#format"		"{1:d}"
 		"en"			"You got {1} points for winning."
 		"ru"			"Получено {1} оч. за победу."
+		"es"			"Tu obtienes {1} puntos por ganar."
 	}
 	
 	"CT Win"
 	{
 		"en"			"Counter-Terrorists won. Teams have been swapped."
 		"ru"			"Спецназ победил. Команды меняются местами."
+		"es"			"Anti-Terroristas ganan. Equipos han sido cambiados."
 	}
 	
 	"No Grenades"
 	{
 		"en"			"You haven't received any grenades this round."
 		"ru"			"Вы не получаете гранат в этом раунде."
+		"es"			"Tu no has recibido ninguna granada esta ronda."
 	}
 	
 	"Grenades Received"
@@ -184,6 +211,7 @@
 		"#format"		"{1:s}"
 		"en"			"You have received {1}."
 		"ru"			"Вы получили гранаты: {1}."
+		"es"			"Tu recibiste {1}.
 	}
 	
 	"Frozen"
@@ -191,6 +219,7 @@
 		"#format"		"{1:.1f}"
 		"en"			"You are asleep for {1} seconds."
 		"ru"			"Вы заморожены на {1} с."
+		"es"			"Tu estas congelado durante {1} segundos."
 	}
 	
 	"Frozen Yourself"
@@ -198,6 +227,7 @@
 		"#format"		"{1:.1f}"
 		"en"			"You have frozen yourself for {1} seconds dummy."
 		"ru"			"Вы заморозили себя на {1} с."
+		"es"			"Tu te has congelado durante {1} segundos."
 	}
 	
 	"Frozen By"
@@ -205,18 +235,21 @@
 		"#format"		"{1:s},{2:.1f}"
 		"en"			"You have been frozen by {1} for {2} seconds."
 		"ru"			"Вы были заморожены игроком {1} на {2} с."
+		"es"			"Tu has sido congelado por {1} durante {2} segundos."
 	}
 	
 	"Unfreeze"
 	{
 		"en"			"You are free to go now."
 		"ru"			"Вы разморожены."
+		"es"			"Tu estas libre para ir ahora."
 	}
 	
 	"Round Start"
 	{
 		"en"			"The round has started."
 		"ru"			"Раунд начался."
+		"es"			"La ronda ha comenzado."
 	}
 	
 	//GrenadeMessage
@@ -225,60 +258,70 @@
 	{
 		"en"			"Flashbang"
 		"ru"			"светов"
+		"es"			"Granada aturdidora"
 	}
 	
 	"Molotov"
 	{
 		"en"			"Molotov"
 		"ru"			"зажигательн"
+		"es"			"Granada molotov"
 	}
 	
 	"Smoke Grenade"
 	{
 		"en"			"Smoke Grenade"
 		"ru"			"дымов"
+		"es"			"Granada de humo"
 	}
 	
 	"HE Grenade"
 	{
 		"en"			"HE Grenade"
 		"ru"			"осколочн"
+		"es"			"Granada explosiva"
 	}
 	
 	"Decoy Grenade"
 	{
 		"en"			"Decoy Grenade"
 		"ru"			"ложн"
+		"es"			"Granada de ruido"
 	}
 	
 	"Incendiary Grenade"
 	{
 		"en"			"Incendiary Grenade"
 		"ru"			"зажигательн"
+		"es"			"Granada incendiaria"
 	}
 	
 	"FrostNade"
 	{
 		"en"			"FrostNade"
 		"ru"			"замораживающ"
+		"es"			"Granada congeladora"
 	}
 	
 	"And"
 	{
 		"en"			"and"
 		"ru"			"и"
+		"es"			"y"
 	}
 	
 	"Singular"
 	{
 		"en"			""
 		"ru"			"ая"
+		"es"			""
 	}
 	
 	"Plural"
 	{
 		"en"			"s"
 		"ru"			"ые(ие)"
+		"es"			"s"
 	}
 	
 	"Welcome Msg"
@@ -286,18 +329,21 @@
 		"#format"		"{1:s},{2:s},{3:t}"
 		"en"			"Welcome! This server is running Hide'N'Seek {1} by {2}, in {3} mode."
 		"ru"			"Добро пожаловать! На сервере запущен Hide'N'Seek {1} {2}, в {3} режиме."
+		"es"			"Bienvenido! Este servidor esta ocupando Hide'N'Seek {1} creado por {2}, en {3} modo.
 	}
 	
 	"Normal Mode"
 	{
 		"en"			"normal"
 		"ru"			"обычном"
+		"es"			"normal"
 	}
 	
 	"Respawn Mode"
 	{
 		"en"			"respawn"
 		"ru"			"возрождающем"
+		"es"			"revivir"
 	}
 	
 	//Center and Hint phrases
@@ -307,12 +353,14 @@
 		"#format"		"{1:d},{2:s}"
 		"en"			"The round will start in {1} second{2}."
 		"ru"			"Раунд начнётся через {1} с."
+		"es"			"La ronda comienza en {1} segundo{2}."
 	}
 	
 	"Round Start"
 	{
 		"en"			"The round has started."
 		"ru"			"Раунд начался."
+		"es"			"La ronda ha comenzado."
 	}
 	
 	"Wake Up"
@@ -320,18 +368,21 @@
 		"#format"		"{1:d},{2:s}"
 		"en"			"You will wake up in {1} second{2}."
 		"ru"			"Вы будете разморожены через {1} с."
+		"es"			"Tu podras moverte en {1} segundo{2}."
 	}
 	
 	"Awake"
 	{
 		"en"			"You are awake."
 		"ru"			"Вы разморожены."
+		"es"			"Tu estas despierto."
 	}
 
 	"Spectate Pending"
 	{
 	    "#format"		"{1:f},{2:s}"
 		"en"			"You will be moved to spectators in {1} second{2}."
+		"es"			"Tu seras movido a espectadores en {1} segundo{2}."
 	}
 
 	//Console phrases
@@ -339,17 +390,20 @@
 	{
 		"en"			"You are not allowed to go spectating while you're alive."
 		"ru"			"Запрещено присоединяться к наблюдателям, пока вы живы."
+		"es"			"Tu no tienes permitido ir a espectador cuando estas vivo."
 	}
 
 	"Invalid Team Console"
 	{
 		"en"			"You are trying to join an invalid team."
 		"ru"			"Некорректный индекс команды."
+		"es"			"Tu estas intentando entrar a un equipo invalido."
 	}
 	
 	"Kill Deny"
 	{
 		"en"			"You are not allowed to suicide."
 		"ru"			"Вам запрещено совершать самоубийство."
+		"es"			"Tu no tienes permitido para suicidarte."
 	}
 }

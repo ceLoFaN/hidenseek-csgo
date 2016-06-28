@@ -12,7 +12,8 @@
 	"Toggle Knife Off" // For toggleknife cmd
 	{
 		"en"			"Your knife is now off."
-		"ru"			"Отображение ножа выключено."				"es"			"Tu cuchillo esta desabilitado ahora."
+		"ru"			"Отображение ножа выключено."
+		"es"			"Tu cuchillo esta desabilitado ahora."
 	}
 	
 	"Respawn Aborted Off"

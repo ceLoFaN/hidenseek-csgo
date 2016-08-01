@@ -27,6 +27,11 @@ native int HNS_GetMode();
  */
 forward void HNS_OnCountdownEnd();
 
+/**
+ * Called when hidenseek category for adminmenu was added.
+ */
+forward void HNS_OnCategoryAdded(TopMenu topmenu, TopMenuObject obj);
+
 public SharedPlugin __pl_hidenseek = 
 {
 	name = "hidenseek",

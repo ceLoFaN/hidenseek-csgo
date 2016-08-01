@@ -72,6 +72,7 @@
 #define WINS_FOR_FAST_KNIFE           "3"
 #define GRENADE_NO_BLOCK              "1"
 #define ALLOW_WEAPONS                 "0"
+#define ADMINMENU                     "1"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -234,6 +235,7 @@ int g_iFastKnife;
 int g_iWinsForFastKnife;
 bool g_bGrenadeNoBlock;
 bool g_bAllowWeapons;
+bool g_bAdminMenu = true;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
@@ -268,7 +270,6 @@ int g_iHaloSprite;
 //Pluginstart vars
 float g_fGrenadeSpeedMultiplier;
 char g_sGameDirName[10];
-TopMenu g_AdminMenu;
 
 //Realtime vars
   //frostnades
@@ -405,6 +406,7 @@ public void OnPluginStart()
     g_hWinsForFastKnife = CreateConVar("hns_wins_for_fast_knife", WINS_FOR_FAST_KNIFE, "Wins in row for allow fast knife if hns_fast_knife 2", _, true, 1.0);
     g_hGrenadeNoBlock = CreateConVar("hns_grenade_no_block", GRENADE_NO_BLOCK, "Grenades don't collide with players (0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hAllowWeapons = CreateConVar("hns_allow_weapons", ALLOW_WEAPONS, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
+    CreateConVar("hns_adminmenu", ADMINMENU, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0).AddChangeHook(OnCvarChange);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -493,9 +495,9 @@ public void OnPluginStart()
     if(StrContains(g_sGameDirName, "cstrike") != -1)
         HookEvent("player_blind", OnPlayerFlash_Post);
 
-    TopMenu topmenu;
-    if (LibraryExists("adminmenu") && ((topmenu = GetAdminTopMenu()) != null))
-        OnAdminMenuReady(topmenu);
+    TopMenu topmenu = GetAdminTopMenu();
+    if (topmenu != null)
+        OnAdminMenuCreated(topmenu);
 
     char sPath[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, sPath, sizeof(sPath), "data/hidenseek_spawns");
@@ -663,6 +665,15 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
         g_bGrenadeNoBlock = hConVar.BoolValue; else
     if (StrEqual("hns_allow_weapons", sConVarName))
         g_bAllowWeapons = hConVar.BoolValue;
+    if (StrEqual("hns_adminmenu", sConVarName)) {
+        g_bAdminMenu = StringToInt(sNewValue) != 0;
+        TopMenu topmenu = GetAdminTopMenu();
+        if (topmenu != null)
+            if (g_bAdminMenu)
+                AddHNSCategory(topmenu);
+            else
+                topmenu.Remove(topmenu.FindCategory("hidenseek"));
+    }
 }
 
 public void OnMapStart()
@@ -2321,24 +2332,41 @@ public Action OnPlayerHurt(Event hEvent, const char[] sName, bool bDontBroadcast
     return Plugin_Continue;
 }
 
-public void OnAdminMenuReady(Handle topmenu)
+public void OnAdminMenuCreated(Handle topmenu)
 {
-    TopMenu AdminMenu = TopMenu.FromHandle(topmenu);
-    if (AdminMenu == g_AdminMenu)
-        return;
-    g_AdminMenu = AdminMenu;
+    if (g_bAdminMenu)
+        AddHNSCategory(TopMenu.FromHandle(topmenu));
+}
 
-    TopMenuObject HNSCategory = g_AdminMenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory, "sm_hidenseek_amenu");
-    g_AdminMenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, HNSCategory, _, ADMFLAG_CONVARS);
-    g_AdminMenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, HNSCategory, _, ADMFLAG_CONVARS);
+void AddHNSCategory(TopMenu topmenu)
+{
+    TopMenuObject obj = topmenu.AddCategory("hidenseek", TopMenuHandler_HNSCategory, "sm_hidenseek_amenu");
+    if (obj == INVALID_TOPMENUOBJECT)
+        ThrowError("Failed to create HNS category object.");
+
+    static Handle fwd = null;
+    if (fwd == null)
+        fwd = CreateGlobalForward("HNS_OnCategoryAdded", ET_Ignore, Param_Cell, Param_Cell);
+
+    Call_StartForward(fwd);
+    Call_PushCell(topmenu);
+    Call_PushCell(obj);
+    Call_Finish();
+}
+
+public void HNS_OnCategoryAdded(TopMenu topmenu, TopMenuObject obj)
+{
+    topmenu.AddItem("hns_hnsswitch", TopMenuHandler_HNSSwitch, obj, _, ADMFLAG_CONVARS);
+    topmenu.AddItem("hns_rmswitch", TopMenuHandler_RMSwitch, obj, _, ADMFLAG_CONVARS);
 }
 
 public void TopMenuHandler_HNSCategory(Handle topmenu, TopMenuAction action, TopMenuObject topobj_id, int param, char[] buffer, int maxlength)
 {
-    if (action == TopMenuAction_DisplayTitle) {
-        Format(buffer, maxlength, "HideNSeek");
-    } else if (action == TopMenuAction_DisplayOption) {
-        Format(buffer, maxlength, "HideNSeek");
+    switch (action) {
+        case TopMenuAction_DisplayTitle:
+            strcopy(buffer, maxlength, "HideNSeek");
+        case TopMenuAction_DisplayOption:
+            strcopy(buffer, maxlength, "HideNSeek");
     }
 }
 

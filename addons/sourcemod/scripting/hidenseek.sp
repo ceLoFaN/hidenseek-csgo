@@ -73,6 +73,7 @@
 #define GRENADE_NO_BLOCK              "1"
 #define ALLOW_WEAPONS                 "0"
 #define ADMINMENU                     "1"
+#define SCORE_CRASH_FIX               "1"
 // RespawnMode Defines
 #define RESPAWN_MODE                  "1"
 #define INVISIBILITY_DURATION         "5"
@@ -236,6 +237,7 @@ int g_iWinsForFastKnife;
 bool g_bGrenadeNoBlock;
 bool g_bAllowWeapons;
 bool g_bAdminMenu = true;
+bool g_bScoreCrashFix = true;
 
 //RespawnMode vars
 Handle g_haInvisible[MAXPLAYERS + 1] = {null, ...};
@@ -407,6 +409,7 @@ public void OnPluginStart()
     g_hGrenadeNoBlock = CreateConVar("hns_grenade_no_block", GRENADE_NO_BLOCK, "Grenades don't collide with players (0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
     g_hAllowWeapons = CreateConVar("hns_allow_weapons", ALLOW_WEAPONS, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0);
     CreateConVar("hns_adminmenu", ADMINMENU, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0).AddChangeHook(OnCvarChange);
+    CreateConVar("hns_score_crash_fix", SCORE_CRASH_FIX, "(0=DIBS, 1=ENBL)", _, true, 0.0, true, 1.0).AddChangeHook(OnCvarChange);
     // Remember to add HOOKS to OnCvarChange and modify OnConfigsExecuted
     AutoExecConfig(true, "hidenseek");
 
@@ -664,7 +667,7 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
     if (StrEqual("hns_grenade_no_block", sConVarName))
         g_bGrenadeNoBlock = hConVar.BoolValue; else
     if (StrEqual("hns_allow_weapons", sConVarName))
-        g_bAllowWeapons = hConVar.BoolValue;
+        g_bAllowWeapons = hConVar.BoolValue; else
     if (StrEqual("hns_adminmenu", sConVarName)) {
         g_bAdminMenu = StringToInt(sNewValue) != 0;
         TopMenu topmenu = GetAdminTopMenu();
@@ -673,7 +676,9 @@ public void OnCvarChange(ConVar hConVar, const char[] sOldValue, const char[] sN
                 AddHNSCategory(topmenu);
             else
                 topmenu.Remove(topmenu.FindCategory("hidenseek"));
-    }
+    } else
+    if (StrEqual("hns_score_crash_fix", sConVarName))
+        g_bScoreCrashFix = StringToInt(sNewValue) != 0;
 }
 
 public void OnMapStart()
@@ -1848,6 +1853,12 @@ public Action OnPlayerRunCmd(int iClient, int &iButtons, int &iImpulse, float fa
     return Plugin_Continue;
 }
 
+stock int GetTeamScoreS(int team)
+{
+    return g_bScoreCrashFix ? GetTeamScore(team) : CS_GetTeamScore(team);
+}
+
+#define CS_GetTeamScore(%1) GetTeamScoreS(%1)
 public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
 {
     if(!g_bEnabled)
@@ -1864,9 +1875,9 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
             SwapTeams();
             g_iTWinsInARow = 0;
             //Set the team scores
-            CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T) + 1);
+            if (!g_bScoreCrashFix) CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T) + 1);
             SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T) + 1);
-            CS_SetTeamScore(CS_TEAM_T, iCTScore);
+            if (!g_bScoreCrashFix) CS_SetTeamScore(CS_TEAM_T, iCTScore);
             SetTeamScore(CS_TEAM_T, iCTScore);
             if(g_iMaximumWinStreak)
                 PrintToChatAll(" \x04[HNS] %t", "T Win Team Swap");
@@ -1902,13 +1913,14 @@ public void OnRoundEnd(Event hEvent, const char[] name, bool dontBroadcast)
         PrintToChatAll(" \x04[HNS] %t", "CT Win");
         g_iTWinsInARow = 0;
         //Set the team scores
-        CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T));
+        if (!g_bScoreCrashFix) CS_SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T));
         SetTeamScore(CS_TEAM_CT, CS_GetTeamScore(CS_TEAM_T));
-        CS_SetTeamScore(CS_TEAM_T, iCTScore);
+        if (!g_bScoreCrashFix) CS_SetTeamScore(CS_TEAM_T, iCTScore);
         SetTeamScore(CS_TEAM_T, iCTScore);
     }
     return;
 }
+#undef CS_GetTeamScore
 
 void RemoveNades(int iClient)
 {

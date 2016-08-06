@@ -1,4 +1,4 @@
-hidenseek-csgo
+hidenseek-csgo (DISCONTINUED)
 ==============
 
 Sourcemod HideNSeek plugin for CS:GO
